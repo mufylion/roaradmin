@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } from '../components/ListingForm';
 
 const NavTab = ({ icon, label, active = false, onClick }) => (
   <button
@@ -93,105 +94,63 @@ export default function EditListing() {
             {activeTab === 'Basic Info' && (
               <>
                 {/* General Information */}
-                <section className="bg-card p-8 rounded-2xl border border-border shadow-sm space-y-8">
-                  <h2 className="text-xl font-heading font-bold border-b border-border pb-4">General Information</h2>
-                  
+                <FormSection title="General Information" icon="lucide:info">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Listing Title</label>
-                      <input 
-                        type="text" 
-                        defaultValue="Modern Downtown Loft" 
-                        className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                      />
-                    </div>
+                    <InputField 
+                      label="Listing Title" 
+                      defaultValue="Modern Downtown Loft" 
+                      className="col-span-2"
+                    />
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nightly Rate</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
-                        <input 
-                          type="number" 
-                          defaultValue="120" 
-                          className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                        />
-                      </div>
-                    </div>
+                    <InputField 
+                      label="Nightly Rate" 
+                      type="number" 
+                      defaultValue="120" 
+                      prefix="$"
+                    />
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</label>
-                      <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="draft">Draft</option>
-                      </select>
-                    </div>
+                    <SelectField label="Status" defaultValue="active">
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="draft">Draft</option>
+                    </SelectField>
 
-                    <div className="space-y-2 col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Description</label>
-                      <textarea 
-                        rows="6" 
-                        defaultValue="Experience the ultimate urban lifestyle in this stunning downtown loft. Located in the heart of the city, this modern space features high ceilings, exposed brick, and industrial finishes. Perfect for business travelers and city explorers alike."
-                        className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none"
-                      />
-                    </div>
+                    <TextAreaField 
+                      label="Description" 
+                      rows="6" 
+                      defaultValue="Experience the ultimate urban lifestyle in this stunning downtown loft. Located in the heart of the city, this modern space features high ceilings, exposed brick, and industrial finishes. Perfect for business travelers and city explorers alike."
+                      className="col-span-2"
+                    />
                   </div>
+                </FormSection>
 
-                  {/* Location Section */}
-                  <div className="border-t border-border pt-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4">Location & Address</h3>
+                {/* Location Section */}
+                <div className="border-t border-border pt-6 mt-6">
+                  <FormSection title="Location & Address" icon="lucide:map-pin">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2 col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Street Address</label>
-                        <input 
-                          type="text" 
-                          defaultValue="123 Luxury Avenue" 
-                          className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                        />
-                      </div>
+                      <InputField 
+                        label="Street Address" 
+                        defaultValue="123 Luxury Avenue" 
+                        className="col-span-2"
+                      />
                       
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">City</label>
-                        <input 
-                          type="text" 
-                          defaultValue="New York" 
-                          className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                        />
-                      </div>
+                      <InputField label="City" defaultValue="New York" />
                       
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">State/Province</label>
-                        <input 
-                          type="text" 
-                          defaultValue="New York" 
-                          className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                        />
-                      </div>
+                      <InputField label="State/Province" defaultValue="New York" />
                       
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Postal Code</label>
-                        <input 
-                          type="text" 
-                          defaultValue="10001" 
-                          className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
-                        />
-                      </div>
+                      <InputField label="Postal Code" defaultValue="10001" />
                       
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Country</label>
-                        <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer">
-                          <option value="US">United States</option>
-                          <option value="CA">Canada</option>
-                          <option value="UK">United Kingdom</option>
-                          <option value="FR">France</option>
-                          <option value="AU">Australia</option>
-                        </select>
-                      </div>
+                      <SelectField label="Country" defaultValue="US">
+                        <option value="US">United States</option>
+                        <option value="CA">Canada</option>
+                        <option value="UK">United Kingdom</option>
+                        <option value="FR">France</option>
+                        <option value="AU">Australia</option>
+                      </SelectField>
                     </div>
-                  </div>
-                </section>
-
-                              </>
+                  </FormSection>
+                </div>
+              </>
             )}
 
             {activeTab === 'Media & Gallery' && (

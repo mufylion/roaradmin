@@ -2,35 +2,252 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
-
-const FormSection = ({ title, icon, children }) => (
-  <section className="bg-card p-6 rounded-2xl border border-border shadow-sm space-y-6">
-    <h2 className="text-lg font-heading font-bold flex items-center gap-2">
-      <Icon icon={icon} className="text-primary" />
-      {title}
-    </h2>
-    {children}
-  </section>
-);
-
-const InputField = ({ label, placeholder, type = "text", prefix }) => (
-  <div className="space-y-2">
-    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</label>
-    <div className="relative">
-      {prefix && (
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{prefix}</span>
-      )}
-      <input
-        type={type}
-        placeholder={placeholder}
-        className={`w-full ${prefix ? 'pl-8' : 'px-4'} py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none`}
-      />
-    </div>
-  </div>
-);
+import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } from '../components/ListingForm';
 
 export default function AddNewListing() {
+  const [currentStep, setCurrentStep] = useState(1);
   const [status, setStatus] = useState('publish');
+
+  const nextStep = () => {
+    if (currentStep < 6) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 1: return 'Basic Information';
+      case 2: return 'Media & Gallery';
+      case 3: return 'Amenities';
+      case 4: return 'Pricing Rules';
+      case 5: return 'Policies';
+      case 6: return 'Review & Publish';
+      default: return 'Basic Information';
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <>
+            <FormSection title="Property Details" icon="lucide:info">
+              <div className="space-y-4">
+                <InputField label="Listing Title" placeholder="e.g. Modern Downtown Loft" />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectField label="Property Type">
+                    <option>Apartment</option>
+                    <option>House</option>
+                    <option>Villa</option>
+                    <option>Cabin</option>
+                  </SelectField>
+                  <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix="$" />
+                </div>
+
+                <TextAreaField label="Description" placeholder="Describe the unique features of your property..." rows="4" />
+              </div>
+            </FormSection>
+
+            <FormSection title="Location" icon="lucide:map-pin">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <InputField label="Street Address" placeholder="123 Luxury Ave" />
+                </div>
+                <InputField label="City" placeholder="New York" />
+                <SelectField label="Country">
+                  <option>United States</option>
+                  <option>United Kingdom</option>
+                  <option>Canada</option>
+                  <option>France</option>
+                </SelectField>
+              </div>
+            </FormSection>
+          </>
+        );
+
+      case 2:
+        return (
+          <FormSection title="Media & Gallery" icon="lucide:image">
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 block">Cover Photo</label>
+                <div className="relative group cursor-pointer">
+                  <div className="aspect-video bg-muted rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all">
+                    <Icon icon="lucide:upload-cloud" className="text-4xl text-muted-foreground group-hover:text-primary transition-colors" />
+                    <p className="text-xs font-black uppercase mt-2 text-muted-foreground group-hover:text-primary">Click to upload</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG up to 10MB</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 block">Gallery Photos</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((index) => (
+                    <div key={index} className="relative group">
+                      <div className="w-full h-32 bg-muted rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center">
+                        <Icon icon="lucide:plus" className="text-2xl text-muted-foreground mb-2" />
+                        <span className="text-xs text-muted-foreground">Add Photo</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </FormSection>
+        );
+
+      case 3:
+        return (
+          <FormSection title="Amenities" icon="lucide:zap">
+            <CheckboxGroup 
+              title="Essential Amenities"
+              items={['Wi-Fi', 'Kitchen', 'Free Parking', 'Washer', 'TV', 'Air Conditioning']}
+              defaultChecked={['Wi-Fi', 'Kitchen', 'Free Parking', 'TV', 'Air Conditioning']}
+            />
+            
+            <CheckboxGroup 
+              title="Special Features"
+              items={['Pool', 'Hot Tub', 'Gym', 'Workspace', 'Beach Access', 'Mountain View']}
+              defaultChecked={['Pool', 'Workspace']}
+            />
+            
+            <CheckboxGroup 
+              title="Additional Amenities"
+              items={['Smoke Detector', 'First Aid Kit', 'Fire Extinguisher', 'Carbon Monoxide Detector', 'Baby Monitor']}
+              defaultChecked={[]}
+            />
+          </FormSection>
+        );
+
+      case 4:
+        return (
+          <FormSection title="Pricing Rules" icon="lucide:calendar">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputField label="Weekend Rate" type="number" defaultValue="150" prefix="$" />
+                <InputField label="Weekly Discount" type="number" defaultValue="15" />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold">Seasonal Pricing</h3>
+                <div className="space-y-3">
+                  {[
+                    { season: 'Summer (Jun-Aug)', rate: '180', startDate: '2024-06-01', endDate: '2024-08-31' },
+                    { season: 'Winter (Dec-Feb)', rate: '200', startDate: '2024-12-01', endDate: '2025-02-28' },
+                    { season: 'Holiday Period', rate: '250', startDate: '2024-12-20', endDate: '2025-01-05' }
+                  ].map((item, index) => (
+                    <div key={index} className="p-4 bg-muted/50 rounded-xl">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <InputField label="Season" defaultValue={item.season} readOnly />
+                        <InputField label="Rate" type="number" defaultValue={item.rate} prefix="$" />
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Date Range</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <InputField type="date" defaultValue={item.startDate} />
+                            <InputField type="date" defaultValue={item.endDate} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold">Additional Fees</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Cleaning Fee" type="number" defaultValue="50" prefix="$" />
+                  <InputField label="Service Fee" type="number" defaultValue="8" />
+                </div>
+              </div>
+            </div>
+          </FormSection>
+        );
+
+      case 5:
+        return (
+          <FormSection title="Policies" icon="lucide:shield-check">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-bold mb-4">House Rules</h3>
+                <div className="space-y-3">
+                  {[
+                    'No smoking',
+                    'No parties or events',
+                    'No pets (unless specified)',
+                    'Check-in after 3:00 PM',
+                    'Check-out before 11:00 AM',
+                    'Quiet hours: 10 PM - 7 AM'
+                  ].map((rule) => (
+                    <div key={rule} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                      <Icon icon="lucide:check-circle" className="text-tertiary" />
+                      <span className="text-sm font-medium">{rule}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SelectField label="Cancellation Policy" defaultValue="Flexible (24-hour notice)">
+                  <option>Flexible (24-hour notice)</option>
+                  <option>Moderate (48-hour notice)</option>
+                  <option>Strict (7-day notice)</option>
+                  <option>Super Strict (30-day notice)</option>
+                </SelectField>
+                <InputField label="Security Deposit" type="number" defaultValue="200" prefix="$" />
+              </div>
+
+              <TextAreaField 
+                label="Additional Rules" 
+                placeholder="Add any additional house rules or policies..."
+                rows="4" 
+                defaultValue="Guests must respect neighbors and keep noise levels down. No unauthorized guests allowed. Please report any damages immediately."
+              />
+            </div>
+          </FormSection>
+        );
+
+      case 6:
+        return (
+          <FormSection title="Review & Publish" icon="lucide:check-circle">
+            <div className="space-y-6">
+              <div className="bg-tertiary/10 p-6 rounded-xl border border-tertiary/20">
+                <h3 className="text-lg font-bold mb-4">Review Your Listing</h3>
+                <div className="space-y-4">
+                  {[
+                    'Basic information completed',
+                    'Media uploaded',
+                    'Amenities configured',
+                    'Pricing rules set',
+                    'Policies defined',
+                    'Ready to publish'
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <Icon icon="lucide:check" className="text-tertiary" />
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">
+                  Your listing will be live once published. Make sure all information is accurate before proceeding.
+                </p>
+              </div>
+            </div>
+          </FormSection>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <PageLayout>
@@ -42,120 +259,34 @@ export default function AddNewListing() {
           </Link>
           <div>
             <h1 className="text-2xl font-heading font-bold">Add New Listing</h1>
-            <p className="text-sm text-muted-foreground">Step 1 of 3: Basic Information</p>
+            <p className="text-sm text-muted-foreground">Step {currentStep} of 6: {getStepTitle()}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-muted transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous Step
+          </button>
           <button className="px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-muted transition-all active:scale-95 uppercase tracking-widest">
             Save Draft
           </button>
-          <button className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest">
-            Next Step
+          <button 
+            onClick={nextStep}
+            disabled={currentStep === 6}
+            className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {currentStep === 6 ? 'Publish Listing' : 'Next Step'}
           </button>
         </div>
       </header>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column: Form */}
-          <div className="lg:col-span-2 space-y-6">
-            <FormSection title="Property Details" icon="lucide:info">
-              <div className="space-y-4">
-                <InputField label="Listing Title" placeholder="e.g. Modern Downtown Loft" />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Property Type</label>
-                    <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer">
-                      <option>Apartment</option>
-                      <option>House</option>
-                      <option>Villa</option>
-                      <option>Cabin</option>
-                    </select>
-                  </div>
-                  <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix="$" />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Description</label>
-                  <textarea 
-                    rows="4" 
-                    placeholder="Describe the unique features of your property..." 
-                    className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none"
-                  ></textarea>
-                </div>
-              </div>
-            </FormSection>
-
-            <FormSection title="Location" icon="lucide:map-pin">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <InputField label="Street Address" placeholder="123 Luxury Ave" />
-                </div>
-                <InputField label="City" placeholder="New York" />
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Country</label>
-                  <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer">
-                    <option>United States</option>
-                    <option>United Kingdom</option>
-                    <option>Canada</option>
-                    <option>France</option>
-                  </select>
-                </div>
-              </div>
-            </FormSection>
-          </div>
-
-          {/* Right Column: Media & Status */}
-          <div className="space-y-6">
-            <FormSection title="Cover Photo" icon="lucide:image">
-              <div className="relative group cursor-pointer">
-                <div className="aspect-video bg-muted rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all">
-                  <Icon icon="lucide:upload-cloud" className="text-4xl text-muted-foreground group-hover:text-primary transition-colors" />
-                  <p className="text-xs font-black uppercase mt-2 text-muted-foreground group-hover:text-primary">Click to upload</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG up to 10MB</p>
-                </div>
-              </div>
-            </FormSection>
-
-            <FormSection title="Listing Status" icon="lucide:shield">
-              <div className="space-y-4">
-                <div 
-                  onClick={() => setStatus('publish')}
-                  className={`flex items-center justify-between p-3 bg-muted/50 rounded-xl border transition-all cursor-pointer group ${status === 'publish' ? 'border-primary/20' : 'border-transparent'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full border-2 ${status === 'publish' ? 'border-primary bg-primary' : 'border-muted-foreground'}`}></div>
-                    <span className={`text-sm font-bold ${status !== 'publish' && 'opacity-50'}`}>Publish Immediately</span>
-                  </div>
-                  {status === 'publish' && <Icon icon="lucide:check" className="text-primary" />}
-                </div>
-                
-                <div 
-                  onClick={() => setStatus('draft')}
-                  className={`flex items-center justify-between p-3 bg-muted/50 rounded-xl border transition-all cursor-pointer group ${status === 'draft' ? 'border-primary/20' : 'border-transparent'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full border-2 ${status === 'draft' ? 'border-primary bg-primary' : 'border-muted-foreground'}`}></div>
-                    <span className={`text-sm font-bold ${status !== 'draft' && 'opacity-50'}`}>Save as Draft</span>
-                  </div>
-                  {status === 'draft' && <Icon icon="lucide:check" className="text-primary" />}
-                </div>
-              </div>
-            </FormSection>
-
-            <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20">
-              <h3 className="text-sm font-bold text-primary flex items-center gap-2 mb-2">
-                <Icon icon="lucide:flame" />
-                Pro Tip
-              </h3>
-              <p className="text-xs text-primary/80 leading-relaxed">
-                Listings with high-quality photos and detailed descriptions receive 40% more bookings on average.
-              </p>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto">
+          {renderStepContent()}
         </div>
       </div>
     </PageLayout>
