@@ -244,7 +244,7 @@ export default function Dashboard() {
                 time="3 hours ago" 
               />
             </div>
-            <button className="w-full mt-6 py-2.5 bg-muted hover:bg-muted/80 text-sm font-bold rounded-xl transition-all active:scale-95">View All Activity</button>
+            <Link to="/notifications" className="w-full mt-6 py-2.5 bg-muted hover:bg-muted/80 text-sm font-bold rounded-xl transition-all active:scale-95 text-center block">View All Activity</Link>
           </div>
         </div>
 
@@ -255,7 +255,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-heading font-bold">Recent Bookings</h2>
               <p className="text-xs text-muted-foreground">Manage your latest reservations</p>
             </div>
-            <button className="text-primary text-sm font-bold hover:underline underline-offset-4 decoration-2">View All</button>
+            <Link to="/bookings" className="text-primary text-sm font-bold hover:underline underline-offset-4 decoration-2">View All</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">

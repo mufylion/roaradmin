@@ -12,7 +12,9 @@ const NotificationItem = ({
   description,
   actionLabel,
   actionClass = "text-primary",
-  showBorder = false
+  showBorder = false,
+  onDismiss,
+  onMarkAsRead
 }) => (
   <div
     className={`bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all group flex gap-4 items-start relative overflow-hidden ${
@@ -41,7 +43,12 @@ const NotificationItem = ({
             </button>
           )}
           {unread && (
-            <button className="text-xs font-bold text-muted-foreground hover:text-foreground">Dismiss</button>
+            <button 
+              className="text-xs font-bold text-muted-foreground hover:text-foreground"
+              onClick={() => onMarkAsRead && onMarkAsRead()}
+            >
+              Dismiss
+            </button>
           )}
         </div>
       )}
@@ -55,8 +62,126 @@ const NotificationItem = ({
 
 export default function NotificationCenter() {
   const [activeTab, setActiveTab] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const tabs = ['All', 'Unread (12)', 'System', 'Bookings'];
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      unread: true,
+      icon: "lucide:calendar-check",
+      iconBgClass: "bg-primary/10",
+      iconColorClass: "text-primary",
+      title: "New High-Value Booking Confirmed",
+      time: "2 mins ago",
+      description: <>
+        Guest <span className="font-bold text-foreground">Sophia Miller</span> confirmed a 7-night stay at{' '}
+        <span className="font-bold text-foreground">Luxury Penthouse NYC</span>. Total value: $4,250.00.
+      </>,
+      actionLabel: "View Booking Details",
+      category: "bookings"
+    },
+    {
+      id: 2,
+      unread: true,
+      icon: "lucide:shield-alert",
+      iconBgClass: "bg-orange-500/10",
+      iconColorClass: "text-orange-500",
+      title: "Host Verification Required",
+      time: "15 mins ago",
+      description: <>
+        Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for
+        verification. Action required before listing activation.
+      </>,
+      actionLabel: "Review Documents",
+      actionClass: "text-orange-500",
+      category: "system"
+    },
+    {
+      id: 3,
+      unread: false,
+      icon: "lucide:credit-card",
+      iconBgClass: "bg-muted",
+      iconColorClass: "text-muted-foreground",
+      title: "Payout Processed Successfully",
+      time: "2 hours ago",
+      description: "Weekly payout of $12,480.00 has been initiated to your primary bank account ending in ****4291.",
+      category: "system"
+    },
+    {
+      id: 4,
+      unread: false,
+      icon: "lucide:user-plus",
+      iconBgClass: "bg-purple-500/10",
+      iconColorClass: "text-purple-500",
+      title: "New User Registration Milestone",
+      time: "5 hours ago",
+      description: <>
+        RoarHomes has reached <span className="font-bold text-foreground">1,200 active users</span>! New user Sarah
+        Jenkins just joined the community.
+      </>,
+      category: "system"
+    },
+    {
+      id: 5,
+      unread: false,
+      icon: "lucide:circle-alert",
+      iconBgClass: "bg-destructive/10",
+      iconColorClass: "text-destructive",
+      title: "Security Alert: Unusual Login",
+      time: "Yesterday",
+      description: <>
+        Unusual login detected for admin account <span className="font-bold text-foreground">j.doe@roarhomes.com</span>{' '}
+        from a new IP in London, UK.
+      </>,
+      actionLabel: "Review Security Log",
+      actionClass: "text-destructive",
+      category: "system"
+    }
+  ]);
+
+  const tabs = ['All', 'Unread', 'System', 'Bookings'];
+
+  const getUnreadCount = () => notifications.filter(n => n.unread).length;
+  const getFilteredNotifications = () => {
+    let filtered = notifications;
+    
+    // Filter by tab
+    if (activeTab === 'Unread') {
+      filtered = filtered.filter(n => n.unread);
+    } else if (activeTab === 'System') {
+      filtered = filtered.filter(n => n.category === 'system');
+    } else if (activeTab === 'Bookings') {
+      filtered = filtered.filter(n => n.category === 'bookings');
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(n => 
+        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (typeof n.description === 'string' && n.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    return filtered;
+  };
+
+  const markAsRead = (id) => {
+    setNotifications(prev => prev.map(n => 
+      n.id === id ? { ...n, unread: false } : n
+    ));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
+
+  const clearAll = () => {
+    setNotifications([]);
+  };
+
+  const dismissNotification = (id) => {
+    markAsRead(id);
+  };
 
   return (
     <PageLayout>
@@ -75,6 +200,8 @@ export default function NotificationCenter() {
             <input
               type="text"
               placeholder="Filter alerts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-64 transition-all outline-none"
             />
           </div>
@@ -100,16 +227,22 @@ export default function NotificationCenter() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {tab}
+                {tab === 'Unread' ? `${tab} (${getUnreadCount()})` : tab}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all">
+            <button 
+              onClick={markAllAsRead}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all"
+            >
               <Icon icon="lucide:check-check" className="text-lg" />
               Mark all as read
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-all">
+            <button 
+              onClick={clearAll}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+            >
               <Icon icon="lucide:trash-2" className="text-lg" />
               Clear All
             </button>
@@ -118,79 +251,35 @@ export default function NotificationCenter() {
 
         {/* Notifications List */}
         <div className="space-y-3">
-          <NotificationItem
-            unread
-            showBorder
-            icon="lucide:calendar-check"
-            iconBgClass="bg-primary/10"
-            iconColorClass="text-primary"
-            title="New High-Value Booking Confirmed"
-            time="2 mins ago"
-            description={
-              <>
-                Guest <span className="font-bold text-foreground">Sophia Miller</span> confirmed a 7-night stay at{' '}
-                <span className="font-bold text-foreground">Luxury Penthouse NYC</span>. Total value: $4,250.00.
-              </>
-            }
-            actionLabel="View Booking Details"
-          />
-
-          <NotificationItem
-            unread
-            showBorder
-            icon="lucide:shield-alert"
-            iconBgClass="bg-orange-500/10"
-            iconColorClass="text-orange-500"
-            title="Host Verification Required"
-            time="15 mins ago"
-            description={
-              <>
-                Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for
-                verification. Action required before listing activation.
-              </>
-            }
-            actionLabel="Review Documents"
-            actionClass="text-orange-500"
-          />
-
-          <NotificationItem
-            icon="lucide:credit-card"
-            iconBgClass="bg-muted"
-            iconColorClass="text-muted-foreground"
-            title="Payout Processed Successfully"
-            time="2 hours ago"
-            description="Weekly payout of $12,480.00 has been initiated to your primary bank account ending in ****4291."
-          />
-
-          <NotificationItem
-            icon="lucide:user-plus"
-            iconBgClass="bg-purple-500/10"
-            iconColorClass="text-purple-500"
-            title="New User Registration Milestone"
-            time="5 hours ago"
-            description={
-              <>
-                RoarHomes has reached <span className="font-bold text-foreground">1,200 active users</span>! New user Sarah
-                Jenkins just joined the community.
-              </>
-            }
-          />
-
-          <NotificationItem
-            icon="lucide:circle-alert"
-            iconBgClass="bg-destructive/10"
-            iconColorClass="text-destructive"
-            title="Security Alert: Unusual Login"
-            time="Yesterday"
-            description={
-              <>
-                Unusual login detected for admin account <span className="font-bold text-foreground">j.doe@roarhomes.com</span>{' '}
-                from a new IP in London, UK.
-              </>
-            }
-            actionLabel="Review Security Log"
-            actionClass="text-destructive"
-          />
+          {getFilteredNotifications().length > 0 ? (
+            getFilteredNotifications().map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                unread={notification.unread}
+                showBorder={notification.unread}
+                icon={notification.icon}
+                iconBgClass={notification.iconBgClass}
+                iconColorClass={notification.iconColorClass}
+                title={notification.title}
+                time={notification.time}
+                description={notification.description}
+                actionLabel={notification.actionLabel}
+                actionClass={notification.actionClass}
+                onMarkAsRead={() => dismissNotification(notification.id)}
+              />
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <Icon icon="lucide:inbox" className="text-4xl text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No notifications found</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {activeTab === 'Unread' ? 'All notifications have been read' : 
+                 activeTab === 'System' ? 'No system notifications' : 
+                 activeTab === 'Bookings' ? 'No booking notifications' : 
+                 searchTerm ? 'Try adjusting your search' : 'No notifications available'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pagination/Load More */}

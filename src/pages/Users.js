@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 
@@ -31,7 +32,7 @@ const StatCard = ({ icon, label, value, trend, trendType }) => {
   );
 };
 
-const UserRow = ({ name, email, avatar, role, status, verification, joined }) => (
+const UserRow = ({ name, email, avatar, role, status, verification, joined, id }) => (
   <tr className="hover:bg-muted/30 transition-colors group">
     <td className="px-6 py-4">
       <div className="flex items-center gap-3">
@@ -72,9 +73,13 @@ const UserRow = ({ name, email, avatar, role, status, verification, joined }) =>
     </td>
     <td className="px-6 py-4 text-xs font-bold text-muted-foreground">{joined}</td>
     <td className="px-6 py-4 text-right">
-      <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="More actions">
+      <Link 
+        to={`/users/profile/${id}`}
+        className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+        aria-label="View profile"
+      >
         <Icon icon="lucide:more-vertical" className="text-lg" />
-      </button>
+      </Link>
     </td>
   </tr>
 );
@@ -153,10 +158,11 @@ export default function Users() {
                   name="Arlene McCoy"
                   email="arlene.mccoy@example.com"
                   avatar="https://randomuser.me/api/portraits/women/44.jpg"
-                  role="Host"
+                  role="Guest"
                   status="Active"
                   verification="Verified"
                   joined="Oct 12, 2023"
+                  id="GS-94210"
                 />
                 <UserRow 
                   name="Cody Fisher"
@@ -166,6 +172,7 @@ export default function Users() {
                   status="Active"
                   verification="Pending"
                   joined="Oct 14, 2023"
+                  id="GS-94211"
                 />
                 <UserRow 
                   name="Dianne Russell"
@@ -175,6 +182,7 @@ export default function Users() {
                   status="Suspended"
                   verification="Flagged"
                   joined="Nov 02, 2023"
+                  id="GS-94212"
                 />
               </tbody>
             </table>

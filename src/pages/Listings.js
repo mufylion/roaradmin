@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 
@@ -12,7 +13,8 @@ const ListingCard = ({
   statValue, 
   reviewLabel, 
   reviewValue,
-  isDraft = false 
+  isDraft = false,
+  id
 }) => (
   <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
     <div className={`relative h-56 overflow-hidden ${isDraft ? 'grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100' : ''}`}>
@@ -28,9 +30,9 @@ const ListingCard = ({
       </div>
       {!isDraft && (
         <div className="absolute top-4 right-4 flex gap-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          <button className="p-2 bg-white/90 text-foreground rounded-lg backdrop-blur-md hover:bg-primary hover:text-white transition-all shadow-lg">
+          <Link to={`/listings/edit/${id}`} className="p-2 bg-white/90 text-foreground rounded-lg backdrop-blur-md hover:bg-primary hover:text-white transition-all shadow-lg">
             <Icon icon="lucide:pencil" />
-          </button>
+          </Link>
           <button className="p-2 bg-white/90 text-destructive rounded-lg backdrop-blur-md hover:bg-destructive hover:text-white transition-all shadow-lg">
             <Icon icon="lucide:trash-2" />
           </button>
@@ -58,9 +60,9 @@ const ListingCard = ({
         </div>
       </div>
       <div className="flex gap-2">
-        <button className="flex-1 py-3 bg-primary text-primary-foreground text-xs font-black rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest">
+        <Link to={`/listings/edit/${id}`} className="flex-1 py-3 bg-primary text-primary-foreground text-xs font-black rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest text-center">
           {isDraft ? 'Finish Setup' : 'Edit Details'}
-        </button>
+        </Link>
         <button className="px-4 py-3 bg-muted text-foreground text-xs font-black rounded-xl hover:bg-muted/80 transition-all active:scale-95 uppercase tracking-widest">
           {isDraft ? <Icon icon="lucide:trash-2" className="text-lg" /> : 'Pricing'}
         </button>
@@ -80,10 +82,10 @@ export default function Listings() {
           <h1 className="text-2xl font-heading font-bold">Manage Listings</h1>
           <p className="text-sm text-muted-foreground">Add, edit, and optimize your property portfolio.</p>
         </div>
-        <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95">
+        <Link to="/listings/add-new" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95">
           <Icon icon="lucide:plus" className="text-xl" />
           <span>Add New Listing</span>
-        </button>
+        </Link>
       </header>
 
       {/* Content */}
@@ -125,12 +127,13 @@ export default function Listings() {
             image="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
             title="Modern Downtown Loft"
             price="$120/night"
-            location="New York, NY"
+            location="Manhattan, New York"
             status="Active"
             statLabel="Occupancy"
             statValue="84%"
             reviewLabel="Reviews"
             reviewValue="4.9 (127)"
+            id="SN-98234"
           />
           <ListingCard 
             image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
@@ -142,6 +145,7 @@ export default function Listings() {
             statValue="92%"
             reviewLabel="Reviews"
             reviewValue="4.8 (84)"
+            id="SN-98235"
           />
           <ListingCard 
             image="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
@@ -152,8 +156,9 @@ export default function Listings() {
             statLabel="Completion"
             statValue="65%"
             reviewLabel="Missing"
-            reviewValue="Amenities"
+            reviewValue="Photos"
             isDraft
+            id="SN-98236"
           />
         </div>
 
@@ -219,9 +224,9 @@ export default function Listings() {
                 <span className="px-4 py-2 bg-primary/10 text-primary text-[10px] font-black rounded-xl flex items-center gap-2 border border-transparent hover:border-primary/30 transition-all cursor-default">
                   <Icon icon="lucide:zap" className="text-sm" /> AC
                 </span>
-                <button className="px-4 py-2 bg-muted text-muted-foreground text-[10px] font-black rounded-xl flex items-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-95 uppercase tracking-widest">
+                <Link to="/listings/add-new" className="px-4 py-2 bg-muted text-muted-foreground text-[10px] font-black rounded-xl flex items-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-95 uppercase tracking-widest">
                   <Icon icon="lucide:plus" className="text-sm" /> ADD NEW
-                </button>
+                </Link>
               </div>
             </div>
           </div>
