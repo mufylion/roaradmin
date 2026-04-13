@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
   Chart as ChartJS,
@@ -139,10 +140,10 @@ export default function Dashboard() {
               className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-64 transition-all outline-none"
             />
           </div>
-          <button className="w-10 h-10 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center relative transition-colors">
+          <Link to="/notifications" className="w-10 h-10 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center relative transition-colors">
             <Icon icon="lucide:bell" className="text-xl" />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-card animate-pulse"></span>
-          </button>
+          </Link>
         </div>
       </header>
 

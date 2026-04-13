@@ -8,6 +8,7 @@ import Users from './pages/Users';
 import Financials from './pages/Financials';
 import Settings from './pages/Settings';
 import NotificationRules from './pages/NotificationRules';
+import NotificationCenter from './pages/NotificationCenter';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/financials" element={<Financials />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/notification-rules" element={<NotificationRules />} />
+          <Route path="/notifications" element={<NotificationCenter />} />
         </Routes>
       </div>
     </Router>
