@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Icon } from '@iconify/react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Listings from './pages/Listings';
@@ -11,21 +12,59 @@ import NotificationRules from './pages/NotificationRules';
 import NotificationCenter from './pages/NotificationCenter';
 
 function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <Router>
-      <div className="min-h-screen bg-background flex flex-row">
-        <Sidebar />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/listings" element={<Listings />} />
-          <Route path="/bookings" element={<Bookings />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/financials" element={<Financials />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/notification-rules" element={<NotificationRules />} />
-          <Route path="/notifications" element={<NotificationCenter />} />
-        </Routes>
+      <div className="min-h-screen bg-background flex flex-row relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
+        <div className={`
+          fixed lg:static inset-y-0 left-0 z-50 h-screen
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile Header with Hamburger */}
+          <header className="lg:hidden h-16 bg-card border-b border-border px-4 flex items-center justify-between">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="w-10 h-10 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+            >
+              <Icon icon="lucide:menu" className="text-xl" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Icon icon="lucide:home" className="text-white text-lg" />
+              </div>
+              <span className="text-sm font-heading font-bold">RoarHomes Admin</span>
+            </div>
+          </header>
+
+          {/* Routes */}
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/listings" element={<Listings />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/financials" element={<Financials />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/notification-rules" element={<NotificationRules />} />
+            <Route path="/notifications" element={<NotificationCenter />} />
+          </Routes>
+        </div>
       </div>
     </Router>
   );
