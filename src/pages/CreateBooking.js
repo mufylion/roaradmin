@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 
 export default function CreateBooking() {
@@ -164,28 +165,28 @@ export default function CreateBooking() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <Link to="/bookings" className="p-2 hover:bg-muted rounded-lg transition-colors">
-            <Icon icon="lucide:arrow-left" className="text-xl" />
-          </Link>
-          <div>
-            <h1 className="text-xl md:text-2xl font-heading font-bold">{pageTitle}</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              {isEditMode ? 'Modify booking details and manage reservation.' : 'Reserve a listing for a guest manually.'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="bg-muted text-foreground px-6 py-2.5 rounded-xl font-bold hover:bg-muted/80 transition-all text-xs">
-            Cancel
-          </button>
-          <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
-            {isEditMode ? 'Update Booking' : 'Confirm Reservation'}
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title={pageTitle}
+        description={isEditMode ? 'Modify booking details and manage reservation.' : 'Reserve a listing for a guest manually.'}
+        backButton={{
+          to: '/bookings',
+          icon: 'lucide:arrow-left',
+          ariaLabel: 'Back to bookings'
+        }}
+        actions={[
+          {
+            type: 'button',
+            label: 'Cancel',
+            onClick: () => window.history.back()
+          },
+          {
+            type: 'button',
+            label: isEditMode ? 'Update Booking' : 'Confirm Reservation',
+            shortLabel: isEditMode ? 'Update' : 'Confirm',
+            variant: 'primary'
+          }
+        ]}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">

@@ -13,6 +13,8 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import UniversalTable from '../components/UniversalTable';
 
 // Register ChartJS components
 ChartJS.register(
@@ -263,29 +265,27 @@ export default function Financials() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Financials & Expenses</h1>
-          <p className="text-sm text-muted-foreground">Track revenue, monitor operational costs, and manage payouts.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={downloadReport}
-            className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs"
-          >
-            <Icon icon="lucide:download" className="text-lg" />
-            <span>Download Report</span>
-          </button>
-          <Link 
-            to="/financials/record-expense"
-            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs"
-          >
-            <Icon icon="lucide:plus" className="text-lg" />
-            <span>Record Expense</span>
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Financials & Expenses"
+        description="Track revenue, monitor operational costs, and manage payouts."
+        actions={[
+          {
+            type: 'button',
+            label: 'Download Report',
+            shortLabel: 'Report',
+            icon: 'lucide:download',
+            onClick: downloadReport
+          },
+          {
+            type: 'link',
+            label: 'Record Expense',
+            shortLabel: 'Expense',
+            icon: 'lucide:plus',
+            to: '/financials/record-expense',
+            variant: 'primary'
+          }
+        ]}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
@@ -334,16 +334,30 @@ export default function Financials() {
           </div>
         </div>
 
-        {/* Transactions Table */}
+        {/* Recent Transactions */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-heading font-bold">Recent Transactions</h2>
-            <div className="flex gap-2">
+          <div className="p-4 md:p-6 border-b border-border">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Recent Transactions</h2>
+                <p className="text-sm text-muted-foreground">Latest financial activities and expense records.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="p-2.5 bg-muted rounded-xl hover:bg-muted/80 transition-colors">
+                  <Icon icon="lucide:filter" className="text-lg text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Filter Tabs */}
+          <div className="px-4 md:px-6 py-4 border-b border-border">
+            <div className="flex flex-wrap gap-2">
               {['All', 'Income', 'Expenses'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                     activeFilter === filter
                       ? 'bg-muted text-foreground'
                       : 'text-muted-foreground hover:bg-muted/50'
@@ -354,46 +368,62 @@ export default function Financials() {
               ))}
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
-                <tr>
-                  <th className="px-6 py-4">Transaction ID</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Category</th>
-                  <th className="px-6 py-4">Description</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredTransactions.map((transaction) => (
-                  <TransactionRow 
-                    key={transaction.id}
-                    id={transaction.id}
-                    date={transaction.date}
-                    category={transaction.category}
-                    description={transaction.description}
-                    amount={transaction.amount}
-                    status={transaction.status}
-                  />
-                ))}
-                {filteredTransactions.length === 0 && (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-muted-foreground">
-                      <div className="flex flex-col items-center gap-2">
-                        <Icon icon="lucide:inbox" className="text-2xl" />
-                        <p className="text-sm">No {activeFilter === 'All' ? 'transactions' : activeFilter.toLowerCase()} found</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          
+          <UniversalTable
+            headers={['Transaction ID', 'Date', 'Category', 'Description', 'Amount', 'Status', 'Action']}
+            data={filteredTransactions.map((transaction) => ({
+              col0: transaction.id,
+              col1: transaction.date,
+              col2: (
+                <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${
+                  transaction.category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
+                }`}>
+                  {transaction.category}
+                </span>
+              ),
+              col3: transaction.description,
+              col4: (
+                <span className={`text-sm font-bold ${
+                  transaction.category === 'Income' ? 'text-tertiary' : 'text-destructive'
+                }`}>
+                  {transaction.amount}
+                </span>
+              ),
+              col5: (
+                <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
+                  transaction.status === 'Completed' ? 'bg-tertiary/10 text-tertiary' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {transaction.status}
+                </span>
+              ),
+              col6: (
+                <div className="flex items-center gap-2 justify-end">
+                  <button 
+                    onClick={() => downloadTransaction(transaction)}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    aria-label="Download transaction"
+                  >
+                    <Icon icon="lucide:download" className="text-muted-foreground" />
+                  </button>
+                  <Link 
+                    to={`/financials/edit-transaction/${transaction.id.substring(1)}`}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    aria-label="Edit transaction"
+                  >
+                    <Icon icon="lucide:edit" className="text-muted-foreground" />
+                  </Link>
+                </div>
+              )
+            }))}
+            searchPlaceholder="Search transactions..."
+            filterButton={true}
+            exportButton={true}
+            onExport={downloadReport}
+            mobileColumns={[0, 2, 4]} // Transaction ID, Category, Amount on mobile
+            emptyMessage={`No ${activeFilter === 'All' ? 'transactions' : activeFilter.toLowerCase()} found`}
+          />
         </div>
       </div>
     </PageLayout>
   );
-}
+};

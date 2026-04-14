@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import UniversalTable from '../components/UniversalTable';
 
 const StatCard = ({ title, value, trend, trendType }) => {
   const trendStyles = {
@@ -121,26 +123,27 @@ export default function Bookings() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Booking Management</h1>
-          <p className="text-sm text-muted-foreground">Monitor and manage all reservations across platform.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={exportBookings}
-            className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs"
-          >
-            <Icon icon="lucide:download" className="text-lg" />
-            <span>Export CSV</span>
-          </button>
-          <Link to="/bookings/create" className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
-            <Icon icon="lucide:plus" className="text-lg" />
-            <span>New Booking</span>
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Booking Management"
+        description="Monitor and manage all reservations across platform."
+        actions={[
+          {
+            type: 'button',
+            label: 'Export CSV',
+            shortLabel: 'Export',
+            icon: 'lucide:download',
+            onClick: exportBookings
+          },
+          {
+            type: 'link',
+            label: 'New Booking',
+            shortLabel: 'Booking',
+            icon: 'lucide:plus',
+            to: '/bookings/create',
+            variant: 'primary'
+          }
+        ]}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
@@ -153,76 +156,118 @@ export default function Bookings() {
         </div>
 
         {/* Bookings Table */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-lg font-heading font-bold">Recent Bookings</h2>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 md:flex-none">
-                <Icon icon="lucide:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="text" 
-                  placeholder="Search bookings..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-muted border-none rounded-xl text-xs focus:ring-2 focus:ring-primary w-full md:w-64 outline-none"
-                />
-              </div>
-              <button className="p-2.5 bg-muted rounded-xl hover:bg-muted/80 transition-colors">
-                <Icon icon="lucide:funnel" className="text-lg text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
-                <tr>
-                  <th className="px-6 py-4">Booking ID</th>
-                  <th className="px-6 py-4">Guest</th>
-                  <th className="px-6 py-4">Listing</th>
-                  <th className="px-6 py-4">Check-in/out</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                <BookingRow 
-                  id="#BK-9021"
-                  guest="Arlene McCoy"
-                  avatar="https://randomuser.me/api/portraits/women/44.jpg"
-                  listing="Ocean Breeze Villa"
-                  location="Malibu, CA"
-                  dates="Oct 12 - Oct 15"
-                  nights="3"
-                  amount="$1,250.00"
-                  status="Confirmed"
-                />
-                <BookingRow 
-                  id="#BK-9022"
-                  guest="Cody Fisher"
-                  avatar="https://randomuser.me/api/portraits/men/32.jpg"
-                  listing="Mountain Retreat"
-                  location="Aspen, CO"
-                  dates="Oct 14 - Oct 18"
-                  nights="4"
-                  amount="$2,400.00"
-                  status="Pending"
-                />
-                <BookingRow 
-                  id="#BK-9023"
-                  guest="Jane Cooper"
-                  avatar="https://randomuser.me/api/portraits/women/12.jpg"
-                  listing="Urban Loft"
-                  location="New York, NY"
-                  dates="Oct 20 - Oct 22"
-                  nights="2"
-                  amount="$850.00"
-                  status="Confirmed"
-                />
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <UniversalTable
+          headers={['Booking ID', 'Guest', 'Listing', 'Check-in/out', 'Amount', 'Status', 'Actions']}
+          data={[
+            {
+              col0: '#BK-9021',
+              col1: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-10 h-10 rounded-full border border-border" alt="Arlene McCoy" />
+                  <div>
+                    <p className="text-sm font-bold">Arlene McCoy</p>
+                    <p className="text-[10px] text-muted-foreground">arlene.mccoy@example.com</p>
+                  </div>
+                </div>
+              ),
+              col2: (
+                <div>
+                  <p className="text-sm font-bold">Ocean Breeze Villa</p>
+                  <p className="text-[10px] text-muted-foreground">Malibu, CA</p>
+                </div>
+              ),
+              col3: 'Oct 12 - Oct 15',
+              col4: <span className="text-sm font-bold text-tertiary">$1,250.00</span>,
+              col5: (
+                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
+                  Confirmed
+                </span>
+              ),
+              col6: (
+                <Link 
+                  to="/bookings/BK-9021"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View booking"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            },
+            {
+              col0: '#BK-9022',
+              col1: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <img src="https://randomuser.me/api/portraits/men/32.jpg" className="w-10 h-10 rounded-full border border-border" alt="Cody Fisher" />
+                  <div>
+                    <p className="text-sm font-bold">Cody Fisher</p>
+                    <p className="text-[10px] text-muted-foreground">cody.fisher@example.com</p>
+                  </div>
+                </div>
+              ),
+              col2: (
+                <div>
+                  <p className="text-sm font-bold">Mountain Retreat</p>
+                  <p className="text-[10px] text-muted-foreground">Aspen, CO</p>
+                </div>
+              ),
+              col3: 'Oct 14 - Oct 18',
+              col4: <span className="text-sm font-bold text-tertiary">$2,400.00</span>,
+              col5: (
+                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-primary/10 text-primary">
+                  Pending
+                </span>
+              ),
+              col6: (
+                <Link 
+                  to="/bookings/BK-9022"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View booking"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            },
+            {
+              col0: '#BK-9023',
+              col1: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <img src="https://randomuser.me/api/portraits/women/12.jpg" className="w-10 h-10 rounded-full border border-border" alt="Jane Cooper" />
+                  <div>
+                    <p className="text-sm font-bold">Jane Cooper</p>
+                    <p className="text-[10px] text-muted-foreground">jane.cooper@example.com</p>
+                  </div>
+                </div>
+              ),
+              col2: (
+                <div>
+                  <p className="text-sm font-bold">Urban Loft</p>
+                  <p className="text-[10px] text-muted-foreground">New York, NY</p>
+                </div>
+              ),
+              col3: 'Oct 20 - Oct 22',
+              col4: <span className="text-sm font-bold text-tertiary">$850.00</span>,
+              col5: (
+                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
+                  Confirmed
+                </span>
+              ),
+              col6: (
+                <Link 
+                  to="/bookings/BK-9023"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View booking"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            }
+          ]}
+          searchPlaceholder="Search bookings..."
+          filterButton={true}
+          exportButton={true}
+          onExport={exportBookings}
+          mobileColumns={[0, 1, 5]} // Show Booking ID, Guest, and Status on mobile
+        />
       </div>
     </PageLayout>
   );

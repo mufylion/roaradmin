@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
 import NotificationRules from './NotificationRules.js';
 import PaymentGateways from './PaymentGateways.js';
 import EmailTemplates from './EmailTemplates.js';
@@ -142,16 +143,19 @@ export default function Settings() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Admin Settings</h1>
-          <p className="text-sm text-muted-foreground">Configure global platform parameters and system preferences.</p>
-        </div>
-        <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
-          <span>Save All Changes</span>
-        </button>
-      </header>
+      <PageHeader
+        title="Admin Settings"
+        description="Configure global platform parameters and system preferences."
+        actions={[
+          {
+            type: 'button',
+            label: 'Save All Changes',
+            shortLabel: 'Save',
+            icon: 'lucide:save',
+            variant: 'primary'
+          }
+        ]}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">

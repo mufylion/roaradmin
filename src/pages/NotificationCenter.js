@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
 
 const NotificationItem = ({
   unread = false,
@@ -185,32 +186,31 @@ export default function NotificationCenter() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Notifications Center</h1>
-          <p className="text-sm text-muted-foreground">Manage system alerts and user activity.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <Icon
-              icon="lucide:search"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors"
-            />
-            <input
-              type="text"
-              placeholder="Filter alerts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-64 transition-all outline-none"
-            />
-          </div>
-          <button className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center relative transition-colors shadow-lg shadow-primary/20">
-            <Icon icon="lucide:bell" className="text-xl" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-primary-foreground animate-pulse"></span>
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title="Notifications Center"
+        description="Manage system alerts and user activity."
+        customContent={
+          <>
+            <div className="relative group">
+              <Icon
+                icon="lucide:search"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors"
+              />
+              <input
+                type="text"
+                placeholder="Filter alerts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-48 md:w-64 transition-all outline-none"
+              />
+            </div>
+            <button className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center relative transition-colors shadow-lg shadow-primary/20">
+              <Icon icon="lucide:bell" className="text-xl" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-primary-foreground animate-pulse"></span>
+            </button>
+          </>
+        }
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth">

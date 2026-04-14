@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
 
 const ListingCard = ({ 
   image, 
@@ -78,17 +79,20 @@ export default function Listings() {
   return (
     <PageLayout>
       <>
-        {/* Header */}
-        <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl font-heading font-bold">Manage Listings</h1>
-            <p className="text-sm text-muted-foreground">Add, edit, and optimize your property portfolio.</p>
-          </div>
-          <Link to="/listings/add-new" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95">
-            <Icon icon="lucide:plus" className="text-xl" />
-            Add New Listing
-          </Link>
-        </header>
+        <PageHeader
+          title="Manage Listings"
+          description="Add, edit, and optimize your property portfolio."
+          actions={[
+            {
+              type: 'link',
+              label: 'Add New Listing',
+              shortLabel: 'Add Listing',
+              icon: 'lucide:plus',
+              to: '/listings/add-new',
+              variant: 'primary'
+            }
+          ]}
+        />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">

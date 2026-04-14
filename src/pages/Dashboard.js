@@ -14,6 +14,8 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import UniversalTable from '../components/UniversalTable';
 
 // Register ChartJS components
 ChartJS.register(
@@ -125,27 +127,26 @@ export default function Dashboard() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-20 bg-card border-b border-border px-8 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Dashboard Overview</h1>
-          <p className="text-sm text-muted-foreground">Welcome back, here's what's happening today.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <Icon icon="lucide:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search anything..." 
-              className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-64 transition-all outline-none"
-            />
-          </div>
-          <Link to="/notifications" className="w-10 h-10 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center relative transition-colors">
-            <Icon icon="lucide:bell" className="text-xl" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-card animate-pulse"></span>
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Dashboard Overview"
+        description="Welcome back, here's what's happening today."
+        customContent={
+          <>
+            <div className="relative group">
+              <Icon icon="lucide:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-32 xs:w-40 sm:w-48 md:w-64 transition-all outline-none"
+              />
+            </div>
+            <Link to="/notifications" className="w-10 h-10 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center relative transition-colors">
+              <Icon icon="lucide:bell" className="text-xl" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-card animate-pulse"></span>
+            </Link>
+          </>
+        }
+      />
 
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
@@ -250,67 +251,73 @@ export default function Dashboard() {
 
         {/* Recent Bookings Table */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="p-4 md:p-6 border-b border-border flex items-center justify-between">
             <div>
               <h2 className="text-lg font-heading font-bold">Recent Bookings</h2>
               <p className="text-xs text-muted-foreground">Manage your latest reservations</p>
             </div>
             <Link to="/bookings" className="text-primary text-sm font-bold hover:underline underline-offset-4 decoration-2">View All</Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-widest font-black">
-                <tr>
-                  <th className="px-6 py-4">Guest</th>
-                  <th className="px-6 py-4">Property</th>
-                  <th className="px-6 py-4">Check In</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                <tr className="hover:bg-muted/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="User" />
-                      <span className="text-sm font-semibold">Sophia Miller</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium">Downtown Loft, NY</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">Oct 24, 2024</td>
-                  <td className="px-6 py-4 text-sm font-bold">$450.00</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-lg uppercase">Confirmed</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all">
-                      <Icon icon="lucide:move-right" />
-                    </button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-muted/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src="https://randomuser.me/api/portraits/men/86.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="User" />
-                      <span className="text-sm font-semibold">James Wilson</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium">Mountain Escape</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">Oct 26, 2024</td>
-                  <td className="px-6 py-4 text-sm font-bold">$1,200.00</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">Pending</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all">
-                      <Icon icon="lucide:move-right" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          
+          <UniversalTable
+            headers={['Guest', 'Property', 'Check In', 'Amount', 'Status', 'Actions']}
+            data={[
+              {
+                col0: ({ rowIndex }) => (
+                  <div className="flex items-center gap-3">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Sophia Miller" />
+                    <span className="text-sm font-semibold">Sophia Miller</span>
+                  </div>
+                ),
+                col1: 'Downtown Loft, NY',
+                col2: 'Oct 24, 2024',
+                col3: <span className="text-sm font-bold">$450.00</span>,
+                col4: (
+                  <span className="px-2 py-1 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-lg uppercase">
+                    Confirmed
+                  </span>
+                ),
+                col5: (
+                  <Link 
+                    to="/bookings/BK-9021"
+                    className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all inline-flex"
+                    aria-label="View booking"
+                  >
+                    <Icon icon="lucide:move-right" />
+                  </Link>
+                )
+              },
+              {
+                col0: ({ rowIndex }) => (
+                  <div className="flex items-center gap-3">
+                    <img src="https://randomuser.me/api/portraits/men/86.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="James Wilson" />
+                    <span className="text-sm font-semibold">James Wilson</span>
+                  </div>
+                ),
+                col1: 'Mountain Escape',
+                col2: 'Oct 26, 2024',
+                col3: <span className="text-sm font-bold">$1,200.00</span>,
+                col4: (
+                  <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">
+                    Pending
+                  </span>
+                ),
+                col5: (
+                  <Link 
+                    to="/bookings/BK-9022"
+                    className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all inline-flex"
+                    aria-label="View booking"
+                  >
+                    <Icon icon="lucide:move-right" />
+                  </Link>
+                )
+              }
+            ]}
+            searchPlaceholder="Search bookings..."
+            filterButton={true}
+            exportButton={true}
+            mobileColumns={[0, 2, 4]} // Guest, Check In, Status on mobile
+          />
         </div>
       </div>
     </PageLayout>

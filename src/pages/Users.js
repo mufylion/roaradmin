@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import UniversalTable from '../components/UniversalTable';
 
 const StatCard = ({ icon, label, value, trend, trendType }) => {
   const trendStyles = {
@@ -141,29 +143,27 @@ export default function Users() {
 
   return (
     <PageLayout>
-      {/* Header */}
-      <header className="h-auto md:h-20 bg-card border-b border-border px-4 md:px-8 py-4 md:py-0 flex flex-col md:flex-row md:items-center justify-between shrink-0 gap-4">
-        <div className="flex-1">
-          <h1 className="text-xl md:text-2xl font-heading font-bold">User Management</h1>
-          <p className="text-xs md:text-sm text-muted-foreground mt-1">Manage platform guests, hosts, and account permissions.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <button 
-            onClick={exportUsers}
-            className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Icon icon="lucide:download" className="text-lg" />
-            <span>Export CSV</span>
-          </button>
-          <Link 
-            to="/users/add-new"
-            className="flex-1 md:flex-none bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Icon icon="lucide:plus" className="text-lg" />
-            <span>Add New User</span>
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="User Management"
+        description="Manage platform guests, hosts, and account permissions."
+        actions={[
+          {
+            type: 'button',
+            label: 'Export CSV',
+            shortLabel: 'Export',
+            icon: 'lucide:download',
+            onClick: exportUsers
+          },
+          {
+            type: 'link',
+            label: 'Add New User',
+            shortLabel: 'Add User',
+            icon: 'lucide:plus',
+            to: '/users/add-new',
+            variant: 'primary'
+          }
+        ]}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 scroll-smooth">
@@ -176,76 +176,137 @@ export default function Users() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-heading font-bold">User Directory</h2>
-              <p className="text-xs text-muted-foreground mt-1">Search and manage all platform participants</p>
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <div className="relative flex-1 md:flex-none group">
-                <Icon icon="lucide:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Search users..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-muted border border-transparent rounded-xl text-xs font-bold focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 w-full md:w-64 transition-all outline-none" 
-                  aria-label="Search users"
-                />
-              </div>
-              <button className="p-2.5 bg-muted rounded-xl hover:bg-primary/10 hover:text-primary transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Filter users">
-                <Icon icon="lucide:funnel" className="text-lg" />
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
-              <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-wider font-black">
-                <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Verification</th>
-                  <th className="px-6 py-4">Joined</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                <UserRow 
-                  name="Arlene McCoy"
-                  email="arlene.mccoy@example.com"
-                  avatar="https://randomuser.me/api/portraits/women/44.jpg"
-                  role="Guest"
-                  status="Active"
-                  verification="Verified"
-                  joined="Oct 12, 2023"
-                  id="GS-94210"
-                />
-                <UserRow 
-                  name="Cody Fisher"
-                  email="cody.fisher@example.com"
-                  avatar="https://randomuser.me/api/portraits/men/32.jpg"
-                  role="Guest"
-                  status="Active"
-                  verification="Pending"
-                  joined="Oct 14, 2023"
-                  id="GS-94211"
-                />
-                <UserRow 
-                  name="Dianne Russell"
-                  email="dianne.r@example.com"
-                  avatar="https://randomuser.me/api/portraits/women/42.jpg"
-                  role="Host"
-                  status="Suspended"
-                  verification="Flagged"
-                  joined="Nov 02, 2023"
-                  id="GS-94212"
-                />
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <UniversalTable
+          headers={['User', 'Role', 'Status', 'Verification', 'Joined', 'Actions']}
+          data={[
+            {
+              col0: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Arlene McCoy" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-tertiary"></span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Arlene McCoy</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">arlene.mccoy@example.com</p>
+                  </div>
+                </div>
+              ),
+              col1: (
+                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-muted text-muted-foreground">
+                  Guest
+                </span>
+              ),
+              col2: (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                  <span className="text-xs font-bold">Active</span>
+                </div>
+              ),
+              col3: (
+                <div className="flex items-center gap-2 text-tertiary">
+                  <Icon icon="lucide:circle-check" className="text-sm" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+                </div>
+              ),
+              col4: <span className="text-xs font-bold text-muted-foreground">Oct 12, 2023</span>,
+              col5: (
+                <Link 
+                  to="/users/profile/GS-94210"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View profile"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            },
+            {
+              col0: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Cody Fisher" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-tertiary"></span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Cody Fisher</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">cody.fisher@example.com</p>
+                  </div>
+                </div>
+              ),
+              col1: (
+                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-muted text-muted-foreground">
+                  Guest
+                </span>
+              ),
+              col2: (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                  <span className="text-xs font-bold">Active</span>
+                </div>
+              ),
+              col3: (
+                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-primary/10 text-primary">
+                  Pending
+                </span>
+              ),
+              col4: <span className="text-xs font-bold text-muted-foreground">Oct 14, 2023</span>,
+              col5: (
+                <Link 
+                  to="/users/profile/GS-94211"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View profile"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            },
+            {
+              col0: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src="https://randomuser.me/api/portraits/women/42.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Dianne Russell" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-destructive"></span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Dianne Russell</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">dianne.r@example.com</p>
+                  </div>
+                </div>
+              ),
+              col1: (
+                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-primary/10 text-primary">
+                  Host
+                </span>
+              ),
+              col2: (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-destructive"></span>
+                  <span className="text-xs font-bold">Suspended</span>
+                </div>
+              ),
+              col3: (
+                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-destructive/10 text-destructive">
+                  Flagged
+                </span>
+              ),
+              col4: <span className="text-xs font-bold text-muted-foreground">Nov 02, 2023</span>,
+              col5: (
+                <Link 
+                  to="/users/profile/GS-94212"
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                  aria-label="View profile"
+                >
+                  <Icon icon="lucide:more-vertical" className="text-lg" />
+                </Link>
+              )
+            }
+          ]}
+          searchPlaceholder="Search users..."
+          filterButton={true}
+          exportButton={true}
+          onExport={exportUsers}
+          mobileColumns={[0, 5]} // Show User and Actions on mobile
+        />
       </div>
     </PageLayout>
   );
