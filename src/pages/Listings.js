@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
+import { useFormatCurrency } from '../config/useAppConfig';
+import { mockListings } from '../data/mockListings';
 
 const ListingCard = ({ 
   image, 
@@ -16,7 +18,8 @@ const ListingCard = ({
   reviewValue,
   isDraft = false,
   id,
-  onClick
+  onClick,
+  formatCurrency
 }) => (
   <div 
     className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
@@ -67,9 +70,24 @@ const ListingCard = ({
 );
 
 export default function Listings() {
+  const formatCurrency = useFormatCurrency();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedListing, setSelectedListing] = useState(null);
-  const [activeTab, setActiveTab] = useState('optimization');
+  const [activeTab, setActiveTab] = useState('listings');
+  
+  // Filter listings based on search query
+  const filteredListings = mockListings.filter(listing =>
+    listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    listing.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    listing.type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Debug log to check pricing
+  console.log('Listings - Sample pricing:', {
+    nightly: mockListings[0]?.price?.nightly,
+    formatted: formatCurrency(mockListings[0]?.price?.nightly || 0),
+    symbol: formatCurrency(12000)
+  });
 
   const handleListingClick = (listingData) => {
     setSelectedListing(listingData);
@@ -129,72 +147,24 @@ export default function Listings() {
 
           {/* Listings Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            <ListingCard 
-              image="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              title="Modern Downtown Loft"
-              price="$120/night"
-              location="Manhattan, New York"
-              status="Active"
-              statLabel="Occupancy"
-              statValue="84%"
-              reviewLabel="Reviews"
-              reviewValue="4.9 (127)"
-              id="SN-98234"
-              onClick={handleListingClick}
-            />
-            <ListingCard 
-              image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              title="Beachfront Villa"
-              price="$350/night"
-              location="Malibu, CA"
-              status="Active"
-              statLabel="Occupancy"
-              statValue="92%"
-              reviewLabel="Reviews"
-              reviewValue="4.8 (84)"
-              id="SN-98235"
-              onClick={handleListingClick}
-            />
-            <ListingCard 
-              image="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              title="Mountain Retreat"
-              price="$180/night"
-              location="Aspen, Colorado"
-              status="Active"
-              statLabel="Occupancy"
-              statValue="76%"
-              reviewLabel="Reviews"
-              reviewValue="4.7 (92)"
-              id="SN-98236"
-              onClick={handleListingClick}
-            />
-            <ListingCard 
-              image="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              title="Urban Studio"
-              price="$85/night"
-              location="Brooklyn, New York"
-              status="Draft"
-              statLabel="Setup"
-              statValue="60%"
-              reviewLabel="Reviews"
-              reviewValue="No reviews"
-              id="SN-98237"
-              isDraft
-              onClick={handleListingClick}
-            />
-            <ListingCard 
-              image="https://images.unsplash.com/photo-1448630360428-65456885c650?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              title="Luxury Penthouse"
-              price="$450/night"
-              location="Miami, FL"
-              status="Active"
-              statLabel="Occupancy"
-              statValue="88%"
-              reviewLabel="Reviews"
-              reviewValue="5.0 (156)"
-              id="SN-98238"
-              onClick={handleListingClick}
-            />
+            {filteredListings.map((listing) => (
+              <ListingCard 
+                key={listing.id}
+                image={listing.images[0]}
+                title={listing.title}
+                price={`${formatCurrency(listing.price.nightly)}/night`}
+                location={`${listing.location.city}, ${listing.location.state}`}
+                status={listing.availability.status === 'active' ? 'Active' : 'Draft'}
+                statLabel="Occupancy"
+                statValue={`${listing.stats.occupancy}%`}
+                reviewLabel="Reviews"
+                reviewValue={`${listing.ratings.overall} (${listing.reviews.length})`}
+                id={listing.id}
+                isDraft={listing.availability.status === 'draft'}
+                onClick={handleListingClick}
+                formatCurrency={formatCurrency}
+              />
+            ))}
           </div>
 
           {/* Optimization and Settings Sections */}
@@ -204,11 +174,11 @@ export default function Listings() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-xl overflow-hidden">
-                    <img src={selectedListing.image} alt={selectedListing.title} className="w-full h-full object-cover" />
+                    <img src={selectedListing?.images?.[0] || ''} alt={selectedListing?.title || ''} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-heading font-bold">{selectedListing.title}</h2>
-                    <p className="text-sm text-muted-foreground">{selectedListing.location} - {selectedListing.id}</p>
+                    <h3 className="text-lg font-bold">{selectedListing?.title || ''}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedListing?.location?.city ? `${selectedListing.location.city}, ${selectedListing.location.state}` : ''}</p>
                   </div>
                 </div>
                 <button 
@@ -257,19 +227,19 @@ export default function Listings() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Occupancy Rate</span>
-                        <span className="text-sm font-bold">{selectedListing.statValue}</span>
+                        <span className="text-sm font-bold">{selectedListing?.stats?.occupancy || 0}%</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Average Rating</span>
-                        <span className="text-sm font-bold">{selectedListing.reviewValue}</span>
+                        <span className="text-sm font-bold">{selectedListing?.ratings?.overall || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Monthly Revenue</span>
-                        <span className="text-sm font-bold">$3,120</span>
+                        <span className="text-sm font-bold">{formatCurrency(selectedListing?.stats?.revenue || 0)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Views This Month</span>
-                        <span className="text-sm font-bold">1,247</span>
+                        <span className="text-sm font-bold">{selectedListing?.stats?.views?.toLocaleString() || '0'}</span>
                       </div>
                     </div>
                   </div>
@@ -287,7 +257,7 @@ export default function Listings() {
                       </div>
                       <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
                         <p className="text-sm font-medium mb-1">Adjust Pricing</p>
-                        <p className="text-xs text-muted-foreground">Competitor analysis suggests $15 increase</p>
+                        <p className="text-xs text-muted-foreground">Competitor analysis suggests {formatCurrency((selectedListing?.price?.nightly || 0) * 0.15)} increase</p>
                       </div>
                       <div className="p-3 bg-muted/50 rounded-xl">
                         <p className="text-sm font-medium mb-1">Improve Description</p>

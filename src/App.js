@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import { AppConfigProvider } from './config/useAppConfig';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Listings from './pages/Listings';
@@ -21,7 +22,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <Router>
+    <AppConfigProvider>
+      <Router>
       <div className="min-h-screen bg-background flex">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
@@ -84,6 +86,7 @@ function App() {
         </div>
       </div>
     </Router>
+    </AppConfigProvider>
   );
 }
 

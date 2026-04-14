@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useAppConfig } from '../config/useAppConfig';
 
 export default function PaymentGateways() {
+  const { config } = useAppConfig();
   const [taxWithholding, setTaxWithholding] = useState(false);
+  
+  // Debug log to check if currency is updating
+  console.log('PaymentGateways - Current currency symbol:', config.currency.symbol);
 
   return (
     <div className="space-y-8">
@@ -60,7 +65,7 @@ export default function PaymentGateways() {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Minimum Payout ($)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Minimum Payout ({config.currency.symbol})</label>
             <input 
               type="number" 
               defaultValue="50" 
@@ -94,7 +99,7 @@ export default function PaymentGateways() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">Standard Processing Fee</p>
-            <p className="text-sm font-bold">2.9% + $0.30</p>
+            <p className="text-sm font-bold">2.9% + {config.currency.symbol}0.30</p>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">International Surcharge</p>
@@ -102,7 +107,7 @@ export default function PaymentGateways() {
           </div>
           <div className="pt-4 border-t border-border flex items-center justify-between">
             <p className="text-sm font-bold">Total Estimated Platform Fee</p>
-            <p className="text-sm font-bold text-primary">4.4% + $0.30</p>
+            <p className="text-sm font-bold text-primary">4.4% + {config.currency.symbol}0.30</p>
           </div>
         </div>
       </div>

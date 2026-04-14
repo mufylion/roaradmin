@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
 
 const StatCard = ({ title, value, trend, trendType }) => {
   const trendStyles = {
@@ -64,6 +65,8 @@ const BookingRow = ({ id, guest, listing, location, dates, nights, amount, statu
 );
 
 export default function Bookings() {
+  const formatCurrency = useFormatCurrency();
+  const formatDate = useFormatDate();
   const [searchQuery, setSearchQuery] = useState('');
 
   const exportBookings = () => {
@@ -176,8 +179,8 @@ export default function Bookings() {
                   <p className="text-[10px] text-muted-foreground">Malibu, CA</p>
                 </div>
               ),
-              col3: 'Oct 12 - Oct 15',
-              col4: <span className="text-sm font-bold text-tertiary">$1,250.00</span>,
+              col3: `${formatDate('2024-10-12')} - ${formatDate('2024-10-15')}`,
+              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(125000)}</span>,
               col5: (
                 <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
                   Confirmed
@@ -210,8 +213,8 @@ export default function Bookings() {
                   <p className="text-[10px] text-muted-foreground">Aspen, CO</p>
                 </div>
               ),
-              col3: 'Oct 14 - Oct 18',
-              col4: <span className="text-sm font-bold text-tertiary">$2,400.00</span>,
+              col3: `${formatDate('2024-10-14')} - ${formatDate('2024-10-18')}`,
+              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(240000)}</span>,
               col5: (
                 <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-primary/10 text-primary">
                   Pending
@@ -244,8 +247,8 @@ export default function Bookings() {
                   <p className="text-[10px] text-muted-foreground">New York, NY</p>
                 </div>
               ),
-              col3: 'Oct 20 - Oct 22',
-              col4: <span className="text-sm font-bold text-tertiary">$850.00</span>,
+              col3: `${formatDate('2024-10-20')} - ${formatDate('2024-10-22')}`,
+              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(85000)}</span>,
               col5: (
                 <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
                   Confirmed

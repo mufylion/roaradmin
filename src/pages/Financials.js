@@ -15,6 +15,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import { useFormatCurrency, useFormatDate, DEFAULT_CONFIG } from '../config/useAppConfig';
 
 // Register ChartJS components
 ChartJS.register(
@@ -122,6 +123,8 @@ const TransactionRow = ({ id, date, category, description, amount, status }) => 
 };
 
 export default function Financials() {
+  const formatCurrency = useFormatCurrency();
+  const formatDate = useFormatDate();
   const [activeFilter, setActiveFilter] = useState('All');
 
   const downloadReport = () => {
@@ -151,44 +154,36 @@ export default function Financials() {
   // Sample transactions data
   const transactions = [
     {
-      id: "#TXN-4921",
-      date: "Oct 24, 2024",
-      category: "Income",
-      description: "Booking #SN-9821 - Downtown Loft",
-      amount: "$435.24",
-      status: "Completed"
+      id: '#T-001',
+      date: formatDate('2024-10-15'),
+      category: 'Income',
+      description: 'Platform revenue from booking commissions',
+      amount: formatCurrency(250000), // Converting to Naira
+      status: 'Completed'
     },
     {
-      id: "#EXP-1034",
-      date: "Oct 23, 2024",
-      category: "Expense",
-      description: "Maintenance - Plumbing Repair (Malibu Villa)",
-      amount: "$850.00",
-      status: "Completed"
+      id: '#T-002',
+      date: formatDate('2024-10-14'),
+      category: 'Expense',
+      description: 'Marketing campaign - Google Ads',
+      amount: formatCurrency(45000), // Converting to Naira
+      status: 'Completed'
     },
     {
-      id: "#EXP-1035",
-      date: "Oct 22, 2024",
-      category: "Expense",
-      description: "Platform Subscription - AWS Hosting",
-      amount: "$1,240.00",
-      status: "Pending"
+      id: '#T-003',
+      date: formatDate('2024-10-12'),
+      category: 'Income',
+      description: 'Host subscription fees',
+      amount: formatCurrency(120000), // Converting to Naira
+      status: 'Completed'
     },
     {
-      id: "#TXN-4922",
-      date: "Oct 21, 2024",
-      category: "Income",
-      description: "Booking #SN-9822 - Beach House",
-      amount: "$1,250.00",
-      status: "Completed"
-    },
-    {
-      id: "#EXP-1036",
-      date: "Oct 20, 2024",
-      category: "Expense",
-      description: "Cleaning Services - Monthly Contract",
-      amount: "$450.00",
-      status: "Completed"
+      id: '#T-004',
+      date: formatDate('2024-10-10'),
+      category: 'Expense',
+      description: 'Server maintenance and hosting',
+      amount: formatCurrency(32000), // Converting to Naira
+      status: 'Pending'
     }
   ];
 
@@ -206,13 +201,13 @@ export default function Financials() {
     datasets: [
       {
         label: 'Revenue',
-        data: [45000, 52000, 61000, 58000, 124500],
+        data: [4500000, 5200000, 6100000, 5800000, 12450000], // Converting to Naira
         backgroundColor: '#2563eb',
         borderRadius: 6,
       },
       {
         label: 'Expenses',
-        data: [12000, 15000, 18000, 14000, 32400],
+        data: [1200000, 1500000, 1800000, 1400000, 3240000], // Converting to Naira
         backgroundColor: '#e2e8f0',
         borderRadius: 6,
       },
@@ -293,25 +288,25 @@ export default function Financials() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
             title="Gross Revenue" 
-            value="$124,500" 
+            value={formatCurrency(12450000)} // Converting to Naira (assuming 1 USD = 100 NGN)
             trend="+18% vs last month" 
             trendType="up" 
           />
           <StatCard 
             title="Total Expenses" 
-            value="$32,400" 
+            value={formatCurrency(3240000)} // Converting to Naira
             trend="+5% vs last month" 
             trendType="down" 
           />
           <StatCard 
             title="Net Profit" 
-            value="$92,100" 
+            value={formatCurrency(9210000)} // Converting to Naira
             trend="+22% vs last month" 
             trendType="up" 
           />
           <StatCard 
             title="Pending Payouts" 
-            value="$18,200" 
+            value={formatCurrency(1820000)} // Converting to Naira
             trend="42 pending transfers" 
             trendType="neutral" 
             icon="lucide:clock" 

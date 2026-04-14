@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
+import { useAppConfig, useFormatCurrency } from '../config/useAppConfig';
 import NotificationRules from './NotificationRules.js';
 import PaymentGateways from './PaymentGateways.js';
 import EmailTemplates from './EmailTemplates.js';
@@ -21,19 +23,26 @@ const NavButton = ({ icon, label, active = false, onClick }) => (
   </button>
 );
 
-const FormField = ({ label, type = "text", value, options }) => (
+const FormField = ({ label, type = "text", value, options, onChange }) => (
   <div className="space-y-2">
     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</label>
     {type === 'select' ? (
-      <select className="w-full px-4 py-2.5 bg-muted border-none rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none">
+      <select 
+        value={value}
+        onChange={(e) => onChange && onChange(e.target.value)}
+        className="w-full px-4 py-2.5 bg-muted border-none rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
+      >
         {options?.map((opt) => (
-          <option key={opt}>{opt}</option>
+          <option key={opt.value || opt} value={opt.value || opt}>
+            {opt.label || opt}
+          </option>
         ))}
       </select>
     ) : (
       <input
         type={type}
-        defaultValue={value}
+        value={value}
+        onChange={(e) => onChange && onChange(e.target.value)}
         className="w-full px-4 py-2.5 bg-muted border-none rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
       />
     )}
@@ -41,15 +50,16 @@ const FormField = ({ label, type = "text", value, options }) => (
 );
 
 export default function Settings() {
-  const [autoConfirm, setAutoConfirm] = useState(true);
+  const { config, currency, timezone, updateCurrency, updateTimezone, resetToDefaults } = useAppConfig();
   const [activeTab, setActiveTab] = useState('general');
+  const [autoConfirm, setAutoConfirm] = useState(false);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'notifications':
         return <NotificationRules />;
       case 'payments':
-        return <PaymentGateways />;
+        return <PaymentGateways key={currency.symbol} />;
       case 'email':
         return <EmailTemplates />;
       case 'roles':
@@ -113,12 +123,57 @@ export default function Settings() {
                 <FormField 
                   label="Base Currency" 
                   type="select" 
-                  options={["USD ($)", "EUR (°)", "GBP (£)"]} 
+                  value={`${currency.code} (${currency.symbol})`}
+                  options={[
+                    { value: 'NGN (₦)', label: 'NGN (₦)' },
+                    { value: 'USD ($)', label: 'USD ($)' },
+                    { value: 'EUR (°)', label: 'EUR (°)' },
+                    { value: 'GBP (£)', label: 'GBP (£)' }
+                  ]} 
+                  onChange={(value) => {
+                    // Parse the selected value to extract code and symbol
+                    const match = value.match(/(\w+)\s*\(([^)]+)\)/);
+                    if (match) {
+                      const [, code, symbol] = match;
+                      const currencyNames = {
+                        'NGN': 'Nigerian Naira',
+                        'USD': 'US Dollar',
+                        'EUR': 'Euro',
+                        'GBP': 'British Pound'
+                      };
+                      updateCurrency({ 
+                        code, 
+                        symbol, 
+                        name: currencyNames[code] || code, 
+                        decimalPlaces: 2, 
+                        thousandsSeparator: ',', 
+                        decimalSeparator: '.' 
+                      });
+                    }
+                  }}
                 />
                 <FormField 
                   label="Timezone" 
                   type="select" 
-                  options={["(GMT-05:00) Eastern Time", "(GMT-08:00) Pacific Time", "(GMT+00:00) London"]} 
+                  value={`(GMT${timezone.offset}) ${timezone.displayName} (${timezone.city})`}
+                  options={[
+                    { value: '(GMT+01:00) West Africa Time (Lagos)', label: '(GMT+01:00) West Africa Time (Lagos)' },
+                    { value: '(GMT-05:00) Eastern Time', label: '(GMT-05:00) Eastern Time' },
+                    { value: '(GMT-08:00) Pacific Time', label: '(GMT-08:00) Pacific Time' },
+                    { value: '(GMT+00:00) London', label: '(GMT+00:00) London' }
+                  ]}
+                  onChange={(value) => {
+                    // Parse the selected value to extract timezone info
+                    const match = value.match(/\(GMT([+-]\d{2}:\d{2})\)\s+(.+?)\s*\((.+?)\)/);
+                    if (match) {
+                      const [, offset, displayName, city] = match;
+                      const utcOffset = parseInt(offset.replace(':', '')) * (offset.startsWith('+') ? 1 : -1) / 100 * 60;
+                      const name = displayName.includes('West Africa') ? 'WAT' : 
+                                   displayName.includes('Eastern') ? 'EST' :
+                                   displayName.includes('Pacific') ? 'PST' : 'GMT';
+                      updateTimezone({ name, displayName, city, offset, utcOffset });
+                    }
+                  }}
                 />
               </div>
             </section>

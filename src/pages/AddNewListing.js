@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } from '../components/ListingForm';
+import { useFormatCurrency, useAppConfig } from '../config/useAppConfig';
 
 export default function AddNewListing() {
+  const { config } = useAppConfig();
+  const formatCurrency = useFormatCurrency();
   const [currentStep, setCurrentStep] = useState(1);
   const [status, setStatus] = useState('publish');
 
@@ -48,7 +51,7 @@ export default function AddNewListing() {
                     <option>Villa</option>
                     <option>Cabin</option>
                   </SelectField>
-                  <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix="$" />
+                  <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix={config.currency.symbol} />
                 </div>
 
                 <TextAreaField label="Description" placeholder="Describe the unique features of your property..." rows="4" />
@@ -132,7 +135,7 @@ export default function AddNewListing() {
           <FormSection title="Pricing Rules" icon="lucide:calendar">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputField label="Weekend Rate" type="number" defaultValue="150" prefix="$" />
+                <InputField label="Weekend Rate" type="number" defaultValue="150" prefix={config.currency.symbol} />
                 <InputField label="Weekly Discount" type="number" defaultValue="15" />
               </div>
 
@@ -147,7 +150,7 @@ export default function AddNewListing() {
                     <div key={index} className="p-4 bg-muted/50 rounded-xl">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InputField label="Season" defaultValue={item.season} readOnly />
-                        <InputField label="Rate" type="number" defaultValue={item.rate} prefix="$" />
+                        <InputField label="Rate" type="number" defaultValue={item.rate} prefix={config.currency.symbol} />
                         <div>
                           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Date Range</label>
                           <div className="grid grid-cols-2 gap-2">
@@ -164,7 +167,7 @@ export default function AddNewListing() {
               <div className="space-y-4">
                 <h3 className="text-lg font-bold">Additional Fees</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputField label="Cleaning Fee" type="number" defaultValue="50" prefix="$" />
+                  <InputField label="Cleaning Fee" type="number" defaultValue="50" prefix={config.currency.symbol} />
                   <InputField label="Service Fee" type="number" defaultValue="8" />
                 </div>
               </div>
@@ -202,7 +205,7 @@ export default function AddNewListing() {
                   <option>Strict (7-day notice)</option>
                   <option>Super Strict (30-day notice)</option>
                 </SelectField>
-                <InputField label="Security Deposit" type="number" defaultValue="200" prefix="$" />
+                <InputField label="Security Deposit" type="number" defaultValue="200" prefix={config.currency.symbol} />
               </div>
 
               <TextAreaField 

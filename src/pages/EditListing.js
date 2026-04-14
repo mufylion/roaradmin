@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } from '../components/ListingForm';
+import { mockListings, getListingById } from '../data/mockListings';
+import { useAppConfig, useFormatCurrency } from '../config/useAppConfig';
 
 const NavTab = ({ icon, label, active = false, onClick }) => (
   <button
@@ -27,7 +29,54 @@ const StatCard = ({ title, value, footer, iconColor = "text-tertiary" }) => (
 );
 
 export default function EditListing() {
+  const { id } = useParams();
+  const { config } = useAppConfig();
+  const formatCurrency = useFormatCurrency();
   const [activeTab, setActiveTab] = useState('Basic Info');
+  const [listing, setListing] = useState(null);
+
+  // Debug log to verify currency updates
+  console.log('EditListing - Current currency symbol:', config.currency.symbol);
+
+  // Load listing data
+  useEffect(() => {
+    const listingData = getListingById(id);
+    if (listingData) {
+      setListing(listingData);
+    }
+  }, [id]);
+
+  // Force refresh currency if old symbol is cached
+  useEffect(() => {
+    const storedCurrency = localStorage.getItem('app_currency');
+    if (storedCurrency) {
+      try {
+        const parsed = JSON.parse(storedCurrency);
+        if (parsed.symbol === '¥') {
+          // Clear old cached currency with wrong symbol
+          localStorage.removeItem('app_currency');
+          window.location.reload(); // Force refresh to load new config
+        }
+      } catch (e) {
+        // Clear corrupted data
+        localStorage.removeItem('app_currency');
+      }
+    }
+  }, []);
+
+  // Show loading state while listing data is being fetched
+  if (!listing) {
+    return (
+      <PageLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading listing details...</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -38,8 +87,8 @@ export default function EditListing() {
             <Icon icon="lucide:arrow-left" className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold">Edit Listing Details</h1>
-            <p className="text-sm text-muted-foreground">ID: #SN-98234 · Modern Downtown Loft</p>
+            <h1 className="text-xl font-heading font-bold">Edit Listing</h1>
+            <p className="text-sm text-muted-foreground">{listing ? `${listing.title} · ${listing.location.city}, ${listing.location.state}` : 'Loading...'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -98,18 +147,18 @@ export default function EditListing() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InputField 
                       label="Listing Title" 
-                      defaultValue="Modern Downtown Loft" 
+                      defaultValue={listing?.title || ''} 
                       className="col-span-2"
                     />
 
                     <InputField 
                       label="Nightly Rate" 
                       type="number" 
-                      defaultValue="120" 
-                      prefix="$"
+                      defaultValue={listing?.price?.nightly || 0} 
+                      prefix={config.currency.symbol}
                     />
 
-                    <SelectField label="Status" defaultValue="active">
+                    <SelectField label="Status" defaultValue={listing?.availability?.status || 'active'}>
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="draft">Draft</option>
@@ -118,7 +167,7 @@ export default function EditListing() {
                     <TextAreaField 
                       label="Description" 
                       rows="6" 
-                      defaultValue="Experience the ultimate urban lifestyle in this stunning downtown loft. Located in the heart of the city, this modern space features high ceilings, exposed brick, and industrial finishes. Perfect for business travelers and city explorers alike."
+                      defaultValue={listing?.description || ''} 
                       className="col-span-2"
                     />
                   </div>
@@ -130,13 +179,13 @@ export default function EditListing() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <InputField 
                         label="Street Address" 
-                        defaultValue="123 Luxury Avenue" 
+                        defaultValue={listing?.location?.address || ''} 
                         className="col-span-2"
                       />
                       
-                      <InputField label="City" defaultValue="New York" />
+                      <InputField label="City" defaultValue={listing?.location?.city || ''} />
                       
-                      <InputField label="State/Province" defaultValue="New York" />
+                      <InputField label="State/Province" defaultValue={listing?.location?.state || ''} />
                       
                       <InputField label="Postal Code" defaultValue="10001" />
                       
@@ -320,10 +369,10 @@ export default function EditListing() {
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Weekend Rate</label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
                         <input 
                           type="number" 
-                          defaultValue="150" 
+                          defaultValue={listing?.price?.weekend || 0} 
                           className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
                         />
                       </div>
@@ -334,7 +383,7 @@ export default function EditListing() {
                       <div className="relative">
                         <input 
                           type="number" 
-                          defaultValue="15" 
+                          defaultValue={listing?.price?.fees?.weeklyDiscount || 15} 
                           className="w-full pr-8 pl-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">%</span>
@@ -346,9 +395,9 @@ export default function EditListing() {
                     <h3 className="text-lg font-bold">Seasonal Pricing</h3>
                     <div className="space-y-3">
                       {[
-                        { season: 'Summer (Jun-Aug)', rate: '180', startDate: '2024-06-01', endDate: '2024-08-31' },
-                        { season: 'Winter (Dec-Feb)', rate: '200', startDate: '2024-12-01', endDate: '2025-02-28' },
-                        { season: 'Holiday Period', rate: '250', startDate: '2024-12-20', endDate: '2025-01-05' }
+                        { season: 'Summer (Jun-Aug)', rate: listing?.price?.seasonal?.summer?.rate || 0, startDate: listing?.price?.seasonal?.summer?.startDate || '2024-06-01', endDate: listing?.price?.seasonal?.summer?.endDate || '2024-08-31' },
+                        { season: 'Winter (Dec-Feb)', rate: listing?.price?.seasonal?.winter?.rate || 0, startDate: listing?.price?.seasonal?.winter?.startDate || '2024-12-01', endDate: listing?.price?.seasonal?.winter?.endDate || '2025-02-28' },
+                        { season: 'Holiday Period', rate: listing?.price?.seasonal?.holiday?.rate || 0, startDate: listing?.price?.seasonal?.holiday?.startDate || '2024-12-20', endDate: listing?.price?.seasonal?.holiday?.endDate || '2025-01-05' }
                       ].map((item, index) => (
                         <div key={index} className="p-4 bg-muted/50 rounded-xl">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -364,7 +413,7 @@ export default function EditListing() {
                             <div>
                               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rate</label>
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">$</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">{config.currency.symbol}</span>
                                 <input 
                                   type="number" 
                                   defaultValue={item.rate}
@@ -400,10 +449,10 @@ export default function EditListing() {
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cleaning Fee</label>
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
                           <input 
                             type="number" 
-                            defaultValue="50" 
+                            defaultValue={listing?.price?.fees?.cleaning || 0} 
                             className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
                           />
                         </div>
@@ -413,7 +462,7 @@ export default function EditListing() {
                         <div className="relative">
                           <input 
                             type="number" 
-                            defaultValue="8" 
+                            defaultValue={listing?.price?.fees?.service || 8} 
                             className="w-full pr-8 pl-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">%</span>
@@ -452,11 +501,11 @@ export default function EditListing() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="text-lg font-bold mb-4">Cancellation Policy</h3>
-                      <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer">
-                        <option>Flexible (24-hour notice)</option>
-                        <option>Moderate (48-hour notice)</option>
-                        <option>Strict (7-day notice)</option>
-                        <option>Super Strict (30-day notice)</option>
+                      <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer" defaultValue={listing?.policies?.cancellation || 'flexible'}>
+                        <option value="flexible">Flexible (24-hour notice)</option>
+                        <option value="moderate">Moderate (48-hour notice)</option>
+                        <option value="strict">Strict (7-day notice)</option>
+                        <option value="super-strict">Super Strict (30-day notice)</option>
                       </select>
                       <p className="text-xs text-muted-foreground mt-2">Guests can cancel up to 24 hours before check-in for a full refund</p>
                     </div>
@@ -464,10 +513,10 @@ export default function EditListing() {
                     <div>
                       <h3 className="text-lg font-bold mb-4">Security Deposit</h3>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
                         <input 
                           type="number" 
-                          defaultValue="200" 
+                          defaultValue={listing?.price?.fees?.securityDeposit || 0} 
                           className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none" 
                         />
                       </div>

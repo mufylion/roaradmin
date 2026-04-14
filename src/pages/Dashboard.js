@@ -16,6 +16,7 @@ import { Line } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
 
 // Register ChartJS components
 ChartJS.register(
@@ -68,22 +69,24 @@ const ActivityItem = ({ icon, bgClass, iconColor, title, subtitle, time }) => (
 );
 
 export default function Dashboard() {
+  const formatCurrency = useFormatCurrency();
+  const formatDate = useFormatDate();
   const chartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
     datasets: [
       {
-        label: 'Revenue ($)',
-        data: [3200, 4100, 3800, 5200, 4800, 6500, 5900],
+        label: 'Revenue',
+        data: [4500000, 5200000, 6100000, 5800000, 12450000], // Converting to Naira
         borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        borderWidth: 3,
         fill: true,
         tension: 0.4,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointBackgroundColor: '#fff',
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#2563eb',
         pointBorderWidth: 2,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#2563eb',
       },
     ],
   };
@@ -155,7 +158,7 @@ export default function Dashboard() {
           <StatCard 
             icon="lucide:activity" 
             label="Total Revenue" 
-            value="$48,250.00" 
+            value={formatCurrency(4825000)} // Converting to Naira
             trend="12.5%" 
             colorClass="text-primary" 
             bgClass="bg-primary/10" 
@@ -270,8 +273,8 @@ export default function Dashboard() {
                   </div>
                 ),
                 col1: 'Downtown Loft, NY',
-                col2: 'Oct 24, 2024',
-                col3: <span className="text-sm font-bold">$450.00</span>,
+                col2: formatDate('2024-10-24'),
+                col3: <span className="text-sm font-bold">{formatCurrency(45000)}</span>,
                 col4: (
                   <span className="px-2 py-1 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-lg uppercase">
                     Confirmed
@@ -295,8 +298,8 @@ export default function Dashboard() {
                   </div>
                 ),
                 col1: 'Mountain Escape',
-                col2: 'Oct 26, 2024',
-                col3: <span className="text-sm font-bold">$1,200.00</span>,
+                col2: formatDate('2024-10-26'),
+                col3: <span className="text-sm font-bold">{formatCurrency(120000)}</span>,
                 col4: (
                   <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">
                     Pending

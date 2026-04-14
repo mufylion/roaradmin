@@ -3,8 +3,10 @@ import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
+import { useAppConfig } from '../config/useAppConfig';
 
 export default function RecordExpense() {
+  const { config } = useAppConfig();
   const { id } = useParams();
   const [amount, setAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
@@ -123,7 +125,7 @@ export default function RecordExpense() {
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground">Amount</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{config.currency.symbol}</span>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -259,7 +261,7 @@ export default function RecordExpense() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Pre-tax Amount</span>
-                  <span className="text-sm font-bold">${parseFloat(amount || '0').toFixed(2)}</span>
+                  <span className="text-sm font-bold">{config.currency.symbol}{parseFloat(amount || '0').toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Tax Rate</span>
@@ -276,7 +278,7 @@ export default function RecordExpense() {
                 </div>
                 <div className="pt-3 border-t border-border flex items-center justify-between">
                   <span className="text-sm font-bold">Total Expense</span>
-                  <span className="text-sm font-extrabold text-destructive">${calculateTotal()}</span>
+                  <span className="text-sm font-extrabold text-destructive">{config.currency.symbol}{calculateTotal()}</span>
                 </div>
               </div>
               <div className="p-3 bg-muted/20 rounded-xl border border-border">

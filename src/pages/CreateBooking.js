@@ -4,8 +4,10 @@ import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
+import { useFormatCurrency } from '../config/useAppConfig';
 
 export default function CreateBooking() {
+  const formatCurrency = useFormatCurrency();
   const { id } = useParams();
   const [guestCount, setGuestCount] = useState(2);
   const [insuranceEnabled, setInsuranceEnabled] = useState(true);
@@ -60,13 +62,14 @@ export default function CreateBooking() {
   ];
 
   const calculateTotal = () => {
-    const nightlyRate = 350;
     const nights = checkInDate && checkOutDate ? 
       Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0;
-    const cleaningFee = 120;
-    const serviceFee = 80;
-    const insurance = insuranceEnabled ? 45 : 0;
-    return nightlyRate * nights + cleaningFee + serviceFee + insurance;
+    const nightlyRate = 35000; // Naira
+    const cleaningFee = 12000; // Naira
+    const serviceFee = 8000; // Naira
+    const insurance = insuranceEnabled ? 4500 : 0; // Naira
+    
+    return (nightlyRate * nights) + cleaningFee + serviceFee + insurance;
   };
 
   const isDateBooked = (dateString) => {
@@ -392,21 +395,21 @@ export default function CreateBooking() {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Nightly Rate</span>
-                  <span className="font-bold">$350.00 × {checkInDate && checkOutDate ? 
+                  <span className="font-bold">{formatCurrency(35000)} × {checkInDate && checkOutDate ? 
                     Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Cleaning Fee</span>
-                  <span className="font-bold">$120.00</span>
+                  <span className="font-bold">{formatCurrency(12000)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Service Fee</span>
-                  <span className="font-bold">$80.00</span>
+                  <span className="font-bold">{formatCurrency(8000)}</span>
                 </div>
                 {insuranceEnabled && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Insurance</span>
-                    <span className="font-bold text-tertiary">+$45.00</span>
+                    <span className="font-bold text-tertiary">+{formatCurrency(4500)}</span>
                   </div>
                 )}
                 <div className="pt-4 border-t border-border">
@@ -414,10 +417,10 @@ export default function CreateBooking() {
                     <div>
                       <p className="text-xs text-muted-foreground font-bold uppercase">Total Amount</p>
                       <p className="text-2xl font-bold text-primary">
-                        ${calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {formatCurrency(calculateTotal())}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg font-bold">USD</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg font-bold">NGN</span>
                   </div>
                 </div>
               </div>
