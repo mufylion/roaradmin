@@ -70,10 +70,13 @@ export default function GuestProfileOverview() {
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
-          <button className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all text-[10px] uppercase tracking-widest border border-border">
+          <Link 
+            to="/users/edit/GS-94210"
+            className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
             <Icon icon="lucide:shield" className="text-lg" />
             <span>Manage User</span>
-          </button>
+          </Link>
           <button className="flex-1 md:flex-none bg-destructive text-destructive-foreground px-5 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-destructive/20 hover:opacity-90 transition-all text-[10px] uppercase tracking-widest">
             <Icon icon="lucide:trash-2" className="text-lg" />
             <span>Suspend User</span>

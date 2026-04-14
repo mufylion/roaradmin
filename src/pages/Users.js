@@ -100,10 +100,13 @@ export default function Users() {
             <Icon icon="lucide:download" className="text-lg" />
             <span>Export CSV</span>
           </button>
-          <button className="flex-1 md:flex-none bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <Link 
+            to="/users/add-new"
+            className="flex-1 md:flex-none bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
             <Icon icon="lucide:plus" className="text-lg" />
             <span>Add New User</span>
-          </button>
+          </Link>
         </div>
       </header>
 

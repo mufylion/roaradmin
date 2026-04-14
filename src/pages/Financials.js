@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
   Chart as ChartJS,
@@ -153,10 +154,13 @@ export default function Financials() {
             <Icon icon="lucide:download" className="text-lg" />
             <span>Download Report</span>
           </button>
-          <button className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
+          <Link 
+            to="/financials/record-expense"
+            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs"
+          >
             <Icon icon="lucide:plus" className="text-lg" />
             <span>Record Expense</span>
-          </button>
+          </Link>
         </div>
       </header>
 

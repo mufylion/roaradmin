@@ -1,0 +1,301 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Icon } from '@iconify/react';
+import PageLayout from '../components/PageLayout';
+import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
+
+export default function RecordExpense() {
+  const [amount, setAmount] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [vendor, setVendor] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [description, setDescription] = useState('');
+  const [taxRate, setTaxRate] = useState(0);
+  const [taxDeductible, setTaxDeductible] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState('approved');
+  const [linkedEntity, setLinkedEntity] = useState('');
+
+  const calculateTotal = () => {
+    const base = parseFloat(amount) || 0;
+    return (base + base * (taxRate / 100)).toFixed(2);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Handle form submission logic here
+    console.log('Recording expense:', {
+      amount,
+      expenseDate,
+      category,
+      vendor,
+      paymentMethod,
+      referenceNumber,
+      description,
+      taxRate,
+      taxDeductible,
+      approvalStatus,
+      linkedEntity
+    });
+  };
+
+  return (
+    <PageLayout>
+      {/* Header */}
+      <header className="h-auto md:h-20 bg-card border-b border-border px-4 md:px-8 py-4 md:py-0 flex items-center justify-between shrink-0 gap-4">
+        <div className="flex items-center gap-4">
+          <Link to="/financials" className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-muted/80 transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Icon icon="lucide:arrow-left" className="text-xl" />
+          </Link>
+          <div>
+            <h1 className="text-xl md:text-2xl font-heading font-bold">Record New Expense</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Log a business expense, maintenance cost, or platform fee.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="hidden md:flex bg-muted text-foreground px-6 py-2.5 rounded-xl font-black items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            Discard
+          </button>
+          <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Icon icon="lucide:check" className="text-lg" />
+            <span>Save Expense</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Form Body */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Primary Form Details */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Expense Details */}
+            <FormSection title="Expense Details" icon="lucide:arrow-down-right">
+             
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 bg-muted/30 border border-input rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-lg text-destructive" 
+                    />
+                  </div>
+                </div>
+                <InputField 
+                  label="Expense Date"
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                  icon="lucide:calendar"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectField 
+                  label="Expense Category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="">Select category...</option>
+                  <option value="maintenance">Maintenance & Repairs</option>
+                  <option value="utilities">Utilities (Water, Electricity, Internet)</option>
+                  <option value="cleaning">Cleaning Services</option>
+                  <option value="marketing">Marketing & Social Ads</option>
+                  <option value="platform">Platform Fees & Commissions</option>
+                  <option value="payroll">Staff Payroll / Contractor Fees</option>
+                  <option value="insurance">Insurance Premiums</option>
+                  <option value="supplies">Office Supplies</option>
+                  <option value="taxes">Taxes & Regulatory Fees</option>
+                  <option value="other">Other Expense</option>
+                </SelectField>
+                <InputField 
+                  label="Vendor / Payee"
+                  placeholder="e.g. HomeDepot, CleanCo"
+                  value={vendor}
+                  onChange={(e) => setVendor(e.target.value)}
+                  icon="lucide:user"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectField 
+                  label="Payment Method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <option value="">Select method...</option>
+                  <option value="business-cc">Business Credit Card (Visa *4242)</option>
+                  <option value="bank-transfer">Bank Transfer (Wire)</option>
+                  <option value="paypal">PayPal Business</option>
+                  <option value="debit-card">Debit Card</option>
+                  <option value="petty-cash">Petty Cash</option>
+                </SelectField>
+                <InputField 
+                  label="Reference / Invoice #"
+                  placeholder="e.g. INV-2024-001"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                />
+              </div>
+
+              <TextAreaField 
+                label="Expense Description"
+                placeholder="Detail the reason for this expense..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows="4"
+              />
+            </FormSection>
+
+            {/* Receipt Upload */}
+            <FormSection title="Receipt & Proof of Purchase" icon="lucide:upload">
+              <div className="text-xs text-muted-foreground italic mb-4">Required for tax compliance</div>
+              <div className="border-2 border-dashed border-input rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-3 hover:border-primary transition-colors cursor-pointer bg-muted/10">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                  <Icon icon="lucide:upload" className="text-2xl" />
+                </div>
+                <div>
+                  <p className="font-bold">Click to upload receipt</p>
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG or PDF (Max. 5MB)</p>
+                </div>
+              </div>
+            </FormSection>
+          </div>
+
+          {/* Right Column: Contextual Info & Summary */}
+          <div className="space-y-6">
+            
+            {/* Related Entity */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <h3 className="text-sm font-heading font-bold">Link to Property / Booking</h3>
+              <p className="text-xs text-muted-foreground">Allocate this cost to a specific listing or booking ID.</p>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Icon icon="lucide:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input 
+                    type="text" 
+                    placeholder="Search listing or booking ID..."
+                    value={linkedEntity}
+                    onChange={(e) => setLinkedEntity(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-muted/30 border border-input rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+                  />
+                </div>
+                {linkedEntity && (
+                  <div className="p-3 border border-border rounded-xl bg-muted/20 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <Icon icon="lucide:image" className="text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">Malibu Beachfront Villa</p>
+                      <p className="text-[10px] text-muted-foreground">ID: #LST-9902</p>
+                    </div>
+                    <button 
+                      onClick={() => setLinkedEntity('')}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Icon icon="lucide:x" className="text-lg" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tax Information */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <h3 className="text-sm font-heading font-bold">Tax & Deductions</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Pre-tax Amount</span>
+                  <span className="text-sm font-bold">${parseFloat(amount || '0').toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Tax Rate</span>
+                  <select 
+                    className="text-sm font-bold bg-transparent outline-none text-right"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(parseInt(e.target.value))}
+                  >
+                    <option value="0">0% (Exempt)</option>
+                    <option value="5">5% (VAT)</option>
+                    <option value="10">10% (GST)</option>
+                    <option value="15">15% (Custom)</option>
+                  </select>
+                </div>
+                <div className="pt-3 border-t border-border flex items-center justify-between">
+                  <span className="text-sm font-bold">Total Expense</span>
+                  <span className="text-sm font-extrabold text-destructive">${calculateTotal()}</span>
+                </div>
+              </div>
+              <div className="p-3 bg-muted/20 rounded-xl border border-border">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={taxDeductible}
+                    onChange={(e) => setTaxDeductible(e.target.checked)}
+                    className="w-4 h-4 text-primary rounded border-input" 
+                  />
+                  <span className="text-xs font-medium">Mark as tax deductible</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Approval Status */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <h3 className="text-sm font-heading font-bold">Approval Status</h3>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="status" 
+                    checked={approvalStatus === 'approved'}
+                    onChange={() => setApprovalStatus('approved')}
+                    className="w-4 h-4 text-primary" 
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold">Approved</p>
+                    <p className="text-[10px] text-muted-foreground">Payment has been authorized.</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="status" 
+                    checked={approvalStatus === 'pending'}
+                    onChange={() => setApprovalStatus('pending')}
+                    className="w-4 h-4 text-primary" 
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold">Pending Review</p>
+                    <p className="text-[10px] text-muted-foreground">Awaiting manager approval.</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="status" 
+                    checked={approvalStatus === 'reimbursable'}
+                    onChange={() => setApprovalStatus('reimbursable')}
+                    className="w-4 h-4 text-primary" 
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold">Reimbursable</p>
+                    <p className="text-[10px] text-muted-foreground">Paid by staff; needs refund.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PageLayout>
+  );
+}

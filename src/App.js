@@ -14,6 +14,8 @@ import GuestProfileOverview from './pages/GuestProfileOverview';
 import AddNewListing from './pages/AddNewListing';
 import EditListing from './pages/EditListing';
 import CreateBooking from './pages/CreateBooking';
+import AddNewUser from './pages/AddNewUser';
+import RecordExpense from './pages/RecordExpense';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -68,8 +70,11 @@ function App() {
               <Route path="/bookings/create" element={<CreateBooking />} />
               <Route path="/bookings/edit/:id" element={<CreateBooking />} />
               <Route path="/users" element={<Users />} />
+              <Route path="/users/add-new" element={<AddNewUser />} />
+              <Route path="/users/edit/:id" element={<AddNewUser />} />
               <Route path="/users/profile/:id" element={<GuestProfileOverview />} />
               <Route path="/financials" element={<Financials />} />
+              <Route path="/financials/record-expense" element={<RecordExpense />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/notification-rules" element={<NotificationRules />} />
               <Route path="/notifications" element={<NotificationCenter />} />

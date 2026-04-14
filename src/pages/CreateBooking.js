@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 
 export default function CreateBooking() {
+  const { id } = useParams();
   const [guestCount, setGuestCount] = useState(2);
   const [insuranceEnabled, setInsuranceEnabled] = useState(true);
   const [selectedGuest, setSelectedGuest] = useState('');
@@ -15,6 +16,39 @@ export default function CreateBooking() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [checkInMonth, setCheckInMonth] = useState(new Date()); // Current month
   const [checkOutMonth, setCheckOutMonth] = useState(new Date()); // Current month
+  
+  const isEditMode = id && id !== 'undefined';
+  const pageTitle = isEditMode ? 'Edit Booking' : 'Create New Booking';
+
+  // Load booking data for edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      // In a real app, you would fetch booking data here
+      // For demo purposes, we'll use mock data
+      const mockBookingData = {
+        'BK-9021': {
+          guestCount: 4,
+          selectedGuest: 'John Doe',
+          selectedProperty: 'ocean-breeze',
+          checkInDate: '2024-12-15',
+          checkOutDate: '2024-12-18',
+          bookingSource: 'direct',
+          specialRequests: 'Late check-in requested, please prepare room'
+        }
+      };
+      
+      const bookingData = mockBookingData[id];
+      if (bookingData) {
+        setGuestCount(bookingData.guestCount);
+        setSelectedGuest(bookingData.selectedGuest);
+        setSelectedProperty(bookingData.selectedProperty);
+        setCheckInDate(bookingData.checkInDate);
+        setCheckOutDate(bookingData.checkOutDate);
+        setBookingSource(bookingData.bookingSource);
+        setSpecialRequests(bookingData.specialRequests);
+      }
+    }
+  }, [id]);
 
   // Sample booked dates for demonstration
   const bookedDates = [
@@ -137,8 +171,10 @@ export default function CreateBooking() {
             <Icon icon="lucide:arrow-left" className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold">Create New Booking</h1>
-            <p className="text-sm text-muted-foreground">Reserve a listing for a guest manually.</p>
+            <h1 className="text-xl md:text-2xl font-heading font-bold">{pageTitle}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              {isEditMode ? 'Modify booking details and manage reservation.' : 'Reserve a listing for a guest manually.'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -146,7 +182,7 @@ export default function CreateBooking() {
             Cancel
           </button>
           <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
-            Confirm Reservation
+            {isEditMode ? 'Update Booking' : 'Confirm Reservation'}
           </button>
         </div>
       </header>
