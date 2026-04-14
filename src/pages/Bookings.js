@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 
@@ -53,9 +54,9 @@ const BookingRow = ({ id, guest, listing, location, dates, nights, amount, statu
       </span>
     </td>
     <td className="px-6 py-4 text-right">
-      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-        <Icon icon="lucide:more-vertical" className="text-muted-foreground" />
-      </button>
+      <Link to="/bookings/edit/BK-9021" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Icon icon="lucide:edit" className="text-muted-foreground" />
+      </Link>
     </td>
   </tr>
 );
@@ -76,10 +77,10 @@ export default function Bookings() {
             <Icon icon="lucide:download" className="text-lg" />
             <span>Export CSV</span>
           </button>
-          <button className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
+          <Link to="/bookings/create" className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs">
             <Icon icon="lucide:plus" className="text-lg" />
             <span>New Booking</span>
-          </button>
+          </Link>
         </div>
       </header>
 

@@ -32,16 +32,6 @@ const ListingCard = ({
           {status}
         </span>
       </div>
-      {!isDraft && (
-        <div className="absolute top-4 right-4 flex gap-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          <Link to={`/listings/edit/${id}`} className="p-2 bg-white/90 text-foreground rounded-lg backdrop-blur-md hover:bg-primary hover:text-white transition-all shadow-lg">
-            <Icon icon="lucide:pencil" />
-          </Link>
-          <button className="p-2 bg-white/90 text-destructive rounded-lg backdrop-blur-md hover:bg-destructive hover:text-white transition-all shadow-lg">
-            <Icon icon="lucide:trash-2" />
-          </button>
-        </div>
-      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     </div>
     <div className="p-6">
@@ -68,7 +58,7 @@ const ListingCard = ({
           {isDraft ? 'Finish Setup' : 'Edit Details'}
         </Link>
         <button className="px-4 py-3 bg-muted text-foreground text-xs font-black rounded-xl hover:bg-muted/80 transition-all active:scale-95 uppercase tracking-widest">
-          {isDraft ? <Icon icon="lucide:trash-2" className="text-lg" /> : 'Pricing'}
+          <Icon icon="lucide:trash-2" className="text-lg" />
         </button>
       </div>
     </div>

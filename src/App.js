@@ -13,6 +13,7 @@ import NotificationCenter from './pages/NotificationCenter';
 import GuestProfileOverview from './pages/GuestProfileOverview';
 import AddNewListing from './pages/AddNewListing';
 import EditListing from './pages/EditListing';
+import CreateBooking from './pages/CreateBooking';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,6 +65,8 @@ function App() {
               <Route path="/listings/add-new" element={<AddNewListing />} />
               <Route path="/listings/edit/:id" element={<EditListing />} />
               <Route path="/bookings" element={<Bookings />} />
+              <Route path="/bookings/create" element={<CreateBooking />} />
+              <Route path="/bookings/edit/:id" element={<CreateBooking />} />
               <Route path="/users" element={<Users />} />
               <Route path="/users/profile/:id" element={<GuestProfileOverview />} />
               <Route path="/financials" element={<Financials />} />
