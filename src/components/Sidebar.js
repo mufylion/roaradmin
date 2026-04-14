@@ -39,13 +39,13 @@ const SidebarItem = ({ icon, label, active = false, to = "#", onClose }) => {
 
 export default function Sidebar({ onClose }) {
   return (
-    <aside className="w-64 h-screen bg-secondary text-secondary-foreground flex flex-col border-r border-border shrink-0 relative">
+    <aside className="w-64 h-screen bg-secondary text-white flex flex-col border-r border-border shrink-0 relative">
       <CloseButton onClose={onClose} />
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <Icon icon="lucide:home" className="text-white text-xl" />
         </div>
-        <span className="text-xl font-heading font-bold tracking-tight">RoarHomes Admin</span>
+        <span className="text-xl font-heading font-bold tracking-tight">Roar Homes</span>
       </div>
       
       <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">

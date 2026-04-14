@@ -4,6 +4,7 @@ import PageLayout from '../components/PageLayout';
 import NotificationRules from './NotificationRules.js';
 import PaymentGateways from './PaymentGateways.js';
 import EmailTemplates from './EmailTemplates.js';
+import UserRoles from './UserRoles.js';
 
 const NavButton = ({ icon, label, active = false, onClick }) => (
   <button
@@ -50,6 +51,8 @@ export default function Settings() {
         return <PaymentGateways />;
       case 'email':
         return <EmailTemplates />;
+      case 'roles':
+        return <UserRoles />;
       default:
         return (
           <>
@@ -178,6 +181,12 @@ export default function Settings() {
               label="Email Templates" 
               active={activeTab === 'email'}
               onClick={() => setActiveTab('email')}
+            />
+            <NavButton 
+              icon="lucide:shield" 
+              label="User Roles" 
+              active={activeTab === 'roles'}
+              onClick={() => setActiveTab('roles')}
             />
           </div>
 
