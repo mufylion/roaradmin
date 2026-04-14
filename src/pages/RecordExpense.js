@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 
 export default function RecordExpense() {
+  const { id } = useParams();
   const [amount, setAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
   const [category, setCategory] = useState('');
@@ -16,6 +17,47 @@ export default function RecordExpense() {
   const [taxDeductible, setTaxDeductible] = useState(true);
   const [approvalStatus, setApprovalStatus] = useState('approved');
   const [linkedEntity, setLinkedEntity] = useState('');
+  
+  const isEditMode = id && id !== 'undefined';
+  const pageTitle = isEditMode ? 'Edit Expense' : 'Record New Expense';
+
+  // Load expense data for edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      // In a real app, you would fetch expense data here
+      // For demo purposes, we'll use mock data
+      const mockExpenseData = {
+        'EXP-1034': {
+          amount: '850.00',
+          expenseDate: '2024-10-23',
+          category: 'maintenance',
+          vendor: 'Plumbing Services Co.',
+          paymentMethod: 'business-cc',
+          referenceNumber: 'INV-2024-034',
+          description: 'Emergency plumbing repair for Malibu Villa - bathroom leak fixed',
+          taxRate: 10,
+          taxDeductible: true,
+          approvalStatus: 'approved',
+          linkedEntity: 'Malibu Beachfront Villa'
+        }
+      };
+      
+      const expenseData = mockExpenseData[id];
+      if (expenseData) {
+        setAmount(expenseData.amount);
+        setExpenseDate(expenseData.expenseDate);
+        setCategory(expenseData.category);
+        setVendor(expenseData.vendor);
+        setPaymentMethod(expenseData.paymentMethod);
+        setReferenceNumber(expenseData.referenceNumber);
+        setDescription(expenseData.description);
+        setTaxRate(expenseData.taxRate);
+        setTaxDeductible(expenseData.taxDeductible);
+        setApprovalStatus(expenseData.approvalStatus);
+        setLinkedEntity(expenseData.linkedEntity);
+      }
+    }
+  }, [id]);
 
   const calculateTotal = () => {
     const base = parseFloat(amount) || 0;
@@ -49,8 +91,10 @@ export default function RecordExpense() {
             <Icon icon="lucide:arrow-left" className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-xl md:text-2xl font-heading font-bold">Record New Expense</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Log a business expense, maintenance cost, or platform fee.</p>
+            <h1 className="text-xl md:text-2xl font-heading font-bold">{pageTitle}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              {isEditMode ? 'Modify expense details and update financial records.' : 'Log a business expense, maintenance cost, or platform fee.'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -59,7 +103,7 @@ export default function RecordExpense() {
           </button>
           <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <Icon icon="lucide:check" className="text-lg" />
-            <span>Save Expense</span>
+            <span>{isEditMode ? 'Update Expense' : 'Save Expense'}</span>
           </button>
         </div>
       </header>

@@ -75,6 +75,7 @@ function App() {
               <Route path="/users/profile/:id" element={<GuestProfileOverview />} />
               <Route path="/financials" element={<Financials />} />
               <Route path="/financials/record-expense" element={<RecordExpense />} />
+              <Route path="/financials/edit-expense/:id" element={<RecordExpense />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/notification-rules" element={<NotificationRules />} />
               <Route path="/notifications" element={<NotificationCenter />} />

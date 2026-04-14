@@ -41,42 +41,162 @@ const StatCard = ({ title, value, trend, trendType, icon }) => {
   );
 };
 
-const TransactionRow = ({ id, date, category, description, amount, status }) => (
-  <tr className="hover:bg-muted/30 transition-colors">
-    <td className="px-6 py-4 text-xs font-bold text-primary">{id}</td>
-    <td className="px-6 py-4 text-xs">{date}</td>
-    <td className="px-6 py-4">
-      <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-        category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
+const TransactionRow = ({ id, date, category, description, amount, status }) => {
+  const downloadTransaction = () => {
+    // Create transaction data for export
+    const transactionData = {
+      id,
+      date,
+      category,
+      description,
+      amount,
+      status,
+      exportDate: new Date().toISOString()
+    };
+    
+    // Convert to CSV format
+    const csvContent = `Transaction ID,Date,Category,Description,Amount,Status\n${id},"${date}","${category}","${description}","${amount}","${status}"`;
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `transaction-${id.substring(1)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <tr className="hover:bg-muted/30 transition-colors">
+      <td className="px-6 py-4 text-xs font-bold text-primary">{id}</td>
+      <td className="px-6 py-4 text-xs">{date}</td>
+      <td className="px-6 py-4">
+        <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
+          category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
+        }`}>
+          {category}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-xs">{description}</td>
+      <td className={`px-6 py-4 text-xs font-bold ${
+        category === 'Income' ? 'text-tertiary' : 'text-destructive'
       }`}>
-        {category}
-      </span>
-    </td>
-    <td className="px-6 py-4 text-xs">{description}</td>
-    <td className={`px-6 py-4 text-xs font-bold ${
-      category === 'Income' ? 'text-tertiary' : 'text-destructive'
-    }`}>
-      {category === 'Income' ? '+' : '-'}{amount}
-    </td>
-    <td className="px-6 py-4">
-      <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-        status === 'Completed' ? 'bg-tertiary/10 text-tertiary' : 
-        status === 'Pending' ? 'bg-primary/10 text-primary' : 
-        'bg-muted text-muted-foreground'
-      }`}>
-        {status}
-      </span>
-    </td>
-    <td className="px-6 py-4 text-right">
-      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-        <Icon icon="lucide:download" className="text-muted-foreground" />
-      </button>
-    </td>
-  </tr>
-);
+        {category === 'Income' ? '+' : '-'}{amount}
+      </td>
+      <td className="px-6 py-4">
+        <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
+          status === 'Completed' ? 'bg-tertiary/10 text-tertiary' : 
+          status === 'Pending' ? 'bg-primary/10 text-primary' : 
+          'bg-muted text-muted-foreground'
+        }`}>
+          {status}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex items-center gap-2 justify-end">
+          {category === 'Expense' && (
+            <Link 
+              to={`/financials/edit-expense/${id.substring(1)}`}
+              className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+              aria-label="Edit expense"
+            >
+              <Icon icon="lucide:edit" className="text-muted-foreground" />
+            </Link>
+          )}
+          <button 
+            onClick={downloadTransaction}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="Download transaction"
+          >
+            <Icon icon="lucide:download" className="text-muted-foreground" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
 
 export default function Financials() {
   const [activeFilter, setActiveFilter] = useState('All');
+
+  const downloadReport = () => {
+    // Filter transactions based on active filter
+    const transactionsToExport = filteredTransactions;
+    
+    // Create CSV content for all transactions
+    const csvContent = `Transaction ID,Date,Category,Description,Amount,Status\n${
+      transactionsToExport.map(transaction => 
+        `${transaction.id},"${transaction.date}","${transaction.category}","${transaction.description}","${transaction.amount}","${transaction.status}"`
+      ).join('\n')
+    }`;
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    link.download = `financial-report-${activeFilter}-${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Sample transactions data
+  const transactions = [
+    {
+      id: "#TXN-4921",
+      date: "Oct 24, 2024",
+      category: "Income",
+      description: "Booking #SN-9821 - Downtown Loft",
+      amount: "$435.24",
+      status: "Completed"
+    },
+    {
+      id: "#EXP-1034",
+      date: "Oct 23, 2024",
+      category: "Expense",
+      description: "Maintenance - Plumbing Repair (Malibu Villa)",
+      amount: "$850.00",
+      status: "Completed"
+    },
+    {
+      id: "#EXP-1035",
+      date: "Oct 22, 2024",
+      category: "Expense",
+      description: "Platform Subscription - AWS Hosting",
+      amount: "$1,240.00",
+      status: "Pending"
+    },
+    {
+      id: "#TXN-4922",
+      date: "Oct 21, 2024",
+      category: "Income",
+      description: "Booking #SN-9822 - Beach House",
+      amount: "$1,250.00",
+      status: "Completed"
+    },
+    {
+      id: "#EXP-1036",
+      date: "Oct 20, 2024",
+      category: "Expense",
+      description: "Cleaning Services - Monthly Contract",
+      amount: "$450.00",
+      status: "Completed"
+    }
+  ];
+
+  // Filter transactions based on active filter
+  const filteredTransactions = transactions.filter(transaction => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'Income') return transaction.category === 'Income';
+    if (activeFilter === 'Expenses') return transaction.category === 'Expense';
+    return true;
+  });
 
   // Chart Data
   const barData = {
@@ -150,7 +270,10 @@ export default function Financials() {
           <p className="text-sm text-muted-foreground">Track revenue, monitor operational costs, and manage payouts.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs">
+          <button 
+            onClick={downloadReport}
+            className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs"
+          >
             <Icon icon="lucide:download" className="text-lg" />
             <span>Download Report</span>
           </button>
@@ -245,30 +368,27 @@ export default function Financials() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                <TransactionRow 
-                  id="#TXN-4921"
-                  date="Oct 24, 2024"
-                  category="Income"
-                  description="Booking #SN-9821 - Downtown Loft"
-                  amount="$435.24"
-                  status="Completed"
-                />
-                <TransactionRow 
-                  id="#EXP-1034"
-                  date="Oct 23, 2024"
-                  category="Expense"
-                  description="Maintenance - Plumbing Repair (Malibu Villa)"
-                  amount="$850.00"
-                  status="Completed"
-                />
-                <TransactionRow 
-                  id="#EXP-1035"
-                  date="Oct 22, 2024"
-                  category="Expense"
-                  description="Platform Subscription - AWS Hosting"
-                  amount="$1,240.00"
-                  status="Pending"
-                />
+                {filteredTransactions.map((transaction) => (
+                  <TransactionRow 
+                    key={transaction.id}
+                    id={transaction.id}
+                    date={transaction.date}
+                    category={transaction.category}
+                    description={transaction.description}
+                    amount={transaction.amount}
+                    status={transaction.status}
+                  />
+                ))}
+                {filteredTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Icon icon="lucide:inbox" className="text-2xl" />
+                        <p className="text-sm">No {activeFilter === 'All' ? 'transactions' : activeFilter.toLowerCase()} found</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
