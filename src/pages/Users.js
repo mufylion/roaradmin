@@ -87,6 +87,58 @@ const UserRow = ({ name, email, avatar, role, status, verification, joined, id }
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const exportUsers = () => {
+    // Sample users data - in a real app, you would get this from state or API
+    const usersData = [
+      {
+        name: "Arlene McCoy",
+        email: "arlene.mccoy@example.com",
+        role: "Guest",
+        status: "Active",
+        verification: "Verified",
+        joined: "Oct 12, 2023",
+        id: "GS-94210"
+      },
+      {
+        name: "Cody Fisher",
+        email: "cody.fisher@example.com",
+        role: "Guest",
+        status: "Active",
+        verification: "Pending",
+        joined: "Oct 14, 2023",
+        id: "GS-94211"
+      },
+      {
+        name: "Dianne Russell",
+        email: "dianne.r@example.com",
+        role: "Host",
+        status: "Suspended",
+        verification: "Flagged",
+        joined: "Nov 02, 2023",
+        id: "GS-94212"
+      }
+    ];
+    
+    // Create CSV content
+    const csvContent = `Name,Email,Role,Status,Verification,Joined,User ID\n${
+      usersData.map(user => 
+        `"${user.name}","${user.email}","${user.role}","${user.status}","${user.verification}","${user.joined}","${user.id}"`
+      ).join('\n')
+    }`;
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    link.download = `users-export-${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <PageLayout>
       {/* Header */}
@@ -96,7 +148,10 @@ export default function Users() {
           <p className="text-xs md:text-sm text-muted-foreground mt-1">Manage platform guests, hosts, and account permissions.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <button className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <button 
+            onClick={exportUsers}
+            className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
             <Icon icon="lucide:download" className="text-lg" />
             <span>Export CSV</span>
           </button>

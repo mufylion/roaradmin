@@ -64,6 +64,61 @@ const BookingRow = ({ id, guest, listing, location, dates, nights, amount, statu
 export default function Bookings() {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const exportBookings = () => {
+    // Sample bookings data - in a real app, you would get this from state or API
+    const bookingsData = [
+      {
+        id: "#BK-9021",
+        guest: "Arlene McCoy",
+        listing: "Skyline Penthouse Suite",
+        location: "Manhattan, New York",
+        dates: "Nov 12 - Nov 18",
+        nights: "6",
+        amount: "$2,450.00",
+        status: "Confirmed"
+      },
+      {
+        id: "#BK-9022",
+        guest: "Cody Fisher",
+        listing: "Coastal Breeze Villa",
+        location: "Malibu, California",
+        dates: "Dec 20 - Dec 27",
+        nights: "7",
+        amount: "$4,800.00",
+        status: "Pending"
+      },
+      {
+        id: "#BK-9023",
+        guest: "Jane Cooper",
+        listing: "Alpine Retreat Lodge",
+        location: "Aspen, Colorado",
+        dates: "Jan 05 - Jan 12",
+        nights: "7",
+        amount: "$3,100.00",
+        status: "Confirmed"
+      }
+    ];
+    
+    // Create CSV content
+    const csvContent = `Booking ID,Guest,Listing,Location,Dates,Nights,Amount,Status\n${
+      bookingsData.map(booking => 
+        `"${booking.id}","${booking.guest}","${booking.listing}","${booking.location}","${booking.dates}","${booking.nights}","${booking.amount}","${booking.status}"`
+      ).join('\n')
+    }`;
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    link.download = `bookings-export-${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <PageLayout>
       {/* Header */}
@@ -73,7 +128,10 @@ export default function Bookings() {
           <p className="text-sm text-muted-foreground">Monitor and manage all reservations across platform.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs">
+          <button 
+            onClick={exportBookings}
+            className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-muted/80 transition-all text-xs"
+          >
             <Icon icon="lucide:download" className="text-lg" />
             <span>Export CSV</span>
           </button>
