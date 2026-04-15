@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
+import { mockUsers, getUserById } from '../data/mockUsers';
+import { useFormatCurrency } from '../config/useAppConfig';
 
 const BookingCard = ({ 
   status, 
@@ -55,6 +57,42 @@ const BookingCard = ({
 
 export default function GuestProfileOverview() {
   const [activeTab, setActiveTab] = useState('Bookings');
+  const { id: userId } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const formatCurrency = useFormatCurrency();
+
+  useEffect(() => {
+    // Find user by ID
+    const foundUser = getUserById(userId);
+    setUser(foundUser);
+    setLoading(false);
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <Icon icon="lucide:user-x" className="text-4xl text-muted-foreground" />
+          <h2 className="text-xl font-bold">User Not Found</h2>
+          <p className="text-muted-foreground">The user you're looking for doesn't exist.</p>
+          <Link to="/users" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all">
+            Back to Users
+          </Link>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -66,12 +104,12 @@ export default function GuestProfileOverview() {
           </Link>
           <div>
             <h1 className="text-xl md:text-2xl font-heading font-bold">Guest Profile</h1>
-            <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest font-black">ID: GS-94210</p>
+            <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest font-black">ID: {user.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
           <Link 
-            to="/users/edit/GS-94210"
+            to={`/users/edit/${user.id}`}
             className="flex-1 md:flex-none bg-muted text-foreground px-4 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-muted/80 transition-all text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Icon icon="lucide:shield" className="text-lg" />
@@ -91,34 +129,38 @@ export default function GuestProfileOverview() {
           {/* Profile Card */}
           <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-8 shadow-sm">
             <div className="relative">
-              <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-muted shadow-xl" alt="Arlene McCoy" />
-              <span className="absolute bottom-2 right-2 w-8 h-8 bg-tertiary border-4 border-card rounded-full flex items-center justify-center shadow-lg">
+              <img src={user.profile.avatar} className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-muted shadow-xl" alt={`${user.profile.firstName} ${user.profile.lastName}`} />
+              <span className={`absolute bottom-2 right-2 w-8 h-8 ${
+                user.verification.email && user.verification.phone ? 'bg-tertiary' : 'bg-muted-foreground'
+              } border-4 border-card rounded-full flex items-center justify-center shadow-lg`}>
                 <Icon icon="lucide:check" className="text-white text-xs" />
               </span>
             </div>
             <div className="flex-1 text-center md:text-left space-y-4">
               <div>
                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-1">
-                  <h2 className="text-2xl md:text-3xl font-heading font-bold">Arlene McCoy</h2>
-                  <span className="inline-flex px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase tracking-wider self-center md:self-auto">Premium Guest</span>
+                  <h2 className="text-2xl md:text-3xl font-heading font-bold">{user.profile.firstName} {user.profile.lastName}</h2>
+                  <span className={`inline-flex px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider self-center md:self-auto ${
+                    user.role === 'host' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                  }`}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
                 </div>
                 <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2 text-sm">
                   <Icon icon="lucide:mail" className="text-primary" />
-                  arlene.mccoy@example.com
+                  {user.contact.email}
                 </p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-border">
                 <div>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Phone</p>
-                  <p className="text-sm font-bold">+1 (555) 012-3456</p>
+                  <p className="text-sm font-bold">{user.contact.phone}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Location</p>
-                  <p className="text-sm font-bold">New York, USA</p>
+                  <p className="text-sm font-bold">{user.profile.location}</p>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Joined</p>
-                  <p className="text-sm font-bold">Oct 12, 2023</p>
+                  <p className="text-sm font-bold">{new Date(user.profile.joined).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
               </div>
             </div>
@@ -133,20 +175,20 @@ export default function GuestProfileOverview() {
               <span className="text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary px-3 py-1 rounded-full">Lifetime Value</span>
             </div>
             <div>
-              <h3 className="text-4xl font-bold mb-1 text-foreground">$12,480.00</h3>
-              <p className="text-muted-foreground text-sm font-medium">Across 24 completed bookings</p>
+              <h3 className="text-4xl font-bold mb-1 text-foreground">{formatCurrency(user.stats.totalSpent || 0)}</h3>
+              <p className="text-muted-foreground text-sm font-medium">Across {user.stats.totalBookings || 0} completed bookings</p>
             </div>
             <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rating</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Icon icon="lucide:star" className="text-tertiary" />
-                  <span className="font-bold text-foreground">4.9</span>
+                  <span className="font-bold text-foreground">{user.stats.averageRating || 'N/A'}</span>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cancellations</p>
-                <p className="font-bold mt-1 text-foreground">0%</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Response Rate</p>
+                <p className="font-bold mt-1 text-foreground">{user.stats.responseRate || 0}%</p>
               </div>
             </div>
           </div>
@@ -297,7 +339,7 @@ export default function GuestProfileOverview() {
               <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-border">
                   <h3 className="text-lg font-heading font-bold">Guest Reviews</h3>
-                  <p className="text-sm text-muted-foreground">Reviews left by Arlene for properties</p>
+                  <p className="text-sm text-muted-foreground">Reviews left by {user.profile.firstName} for properties</p>
                 </div>
                 <div className="divide-y divide-border">
                   <div className="p-6 hover:bg-muted/30 transition-colors">

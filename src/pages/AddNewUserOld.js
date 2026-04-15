@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
-import { getUserById, mockUsers } from '../data/mockUsers';
+import { getUserById } from '../data/mockUsers';
 
 export default function AddNewUser() {
   const { id } = useParams();
@@ -16,8 +16,7 @@ export default function AddNewUser() {
   const [sendEmail, setSendEmail] = useState(true);
   const [internalNotes, setInternalNotes] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
-  const [uploadError, setUploadError] = useState('');
-  const [dataVersion, setDataVersion] = useState(0); // Force re-render
+const [uploadError, setUploadError] = useState('');
   
   const isEditMode = Boolean(id);
   const pageTitle = isEditMode ? 'Edit User' : 'Add New User';
@@ -48,16 +47,19 @@ export default function AddNewUser() {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Only JPEG and PNG files are allowed');
+      setUploadError('Only JPEG and PNG files are allowed');
       return;
     }
 
     // Validate file size (5MB max)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-      alert('File size must be less than 5MB');
+      setUploadError('File size must be less than 5MB');
       return;
     }
+
+    // Clear any previous errors
+    setUploadError('');
 
     // Create file reader to preview the image
     const reader = new FileReader();
@@ -69,62 +71,17 @@ export default function AddNewUser() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('=== FORM SUBMISSION TRIGGERED ===');
-    console.log('Event type:', e.type);
-    console.log('Current form data:', { firstName, lastName, email, phone, role, verified, sendEmail, internalNotes, profilePicture });
+    console.log('handleSubmit called!');
+    alert('Submit button clicked!');
     
     if (isEditMode) {
-      // Find the user in mockUsers
-      const userIndex = mockUsers.findIndex(user => user.id === id);
-      if (userIndex !== -1) {
-        // Update the user data
-        mockUsers[userIndex] = {
-          ...mockUsers[userIndex],
-          profile: {
-            ...mockUsers[userIndex].profile,
-            firstName,
-            lastName,
-            avatar: profilePicture || mockUsers[userIndex].profile.avatar,
-            bio: internalNotes || mockUsers[userIndex].profile.bio
-          },
-          contact: {
-            ...mockUsers[userIndex].contact,
-            email,
-            phone,
-            whatsapp: phone
-          },
-          verification: {
-            ...mockUsers[userIndex].verification,
-            email: verified,
-            phone: verified
-          },
-          preferences: {
-            ...mockUsers[userIndex].preferences,
-            notifications: {
-              ...mockUsers[userIndex].preferences.notifications,
-              email: sendEmail
-            }
-          },
-          role,
-          updatedAt: new Date().toISOString().split('T')[0]
-        };
-        
-        // Save to localStorage for persistence
-        localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-        
-        // Force re-render by updating data version
-        setDataVersion(prev => prev + 1);
-        
-        console.log('User updated successfully:', mockUsers[userIndex]);
-        
-        // Force page reload to see changes
-        setTimeout(() => {
-          window.location.href = `/users/profile/${id}`;
-        }, 100);
-      } else {
-        console.error('User not found for update');
-        alert('Error: User not found');
-      }
+      console.log('Edit mode detected, ID:', id);
+      console.log('Form data:', { firstName, lastName, email, phone, role, verified, sendEmail, internalNotes, profilePicture });
+      
+      // Simple update for now
+      console.log('Would update user:', firstName, lastName);
+      alert(`User ${firstName} ${lastName} would be updated!`);
+      
     } else {
       // Create new user
       const newUser = {
@@ -161,31 +118,17 @@ export default function AddNewUser() {
         status: 'active',
         role,
         createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        stats: {
-          totalBookings: 0,
-          totalSpent: 0,
-          averageRating: 0,
-          reviewsGiven: 0,
-          responseRate: 0
-        }
+        updatedAt: new Date().toISOString().split('T')[0]
       };
 
-      // Add to mockUsers array
-      mockUsers.push(newUser);
+      // In a real app, you would make an API call here
+      console.log('Creating new user:', newUser);
       
-      // Save to localStorage for persistence
-      localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
+      // Show success message and redirect
+      alert(`User ${firstName} ${lastName} has been created successfully!`);
       
-      // Force re-render by updating data version
-      setDataVersion(prev => prev + 1);
-      
-      console.log('New user created:', newUser);
-      
-      // Force page reload to see changes
-      setTimeout(() => {
-        window.location.href = '/users';
-      }, 100);
+      // Redirect to users list
+      window.location.href = '/users';
     }
   };
 
@@ -208,6 +151,10 @@ export default function AddNewUser() {
           <Link to={isEditMode ? `/users/profile/${id}` : "/users"} className="hidden md:flex bg-muted text-foreground px-6 py-2.5 rounded-xl font-black items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
             Cancel
           </Link>
+          <button type="submit" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Icon icon="lucide:check" className="text-lg" />
+            <span>{isEditMode ? 'Update User' : 'Create User'}</span>
+          </button>
         </div>
       </header>
 
@@ -266,10 +213,7 @@ export default function AddNewUser() {
                     value="guest" 
                     className="peer sr-only" 
                     checked={role === 'guest'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('guest');
-                    }}
+                    onChange={() => setRole('guest')}
                   />
                   <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
@@ -285,10 +229,7 @@ export default function AddNewUser() {
                     value="host" 
                     className="peer sr-only"
                     checked={role === 'host'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('host');
-                    }}
+                    onChange={() => setRole('host')}
                   />
                   <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
@@ -304,10 +245,7 @@ export default function AddNewUser() {
                     value="admin" 
                     className="peer sr-only"
                     checked={role === 'admin'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('admin');
-                    }}
+                    onChange={() => setRole('admin')}
                   />
                   <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
@@ -317,10 +255,7 @@ export default function AddNewUser() {
                   </div>
                 </label>
               </div>
-            </FormSection>
 
-            {/* Notifications Card */}
-            <FormSection title="Notifications" icon="lucide:bell">
               <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
                   <div className="flex items-center gap-3">
@@ -378,7 +313,7 @@ export default function AddNewUser() {
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 text-center space-y-4">
               <div className="relative inline-block group">
                 <div className="w-32 h-32 rounded-full border-4 border-muted bg-muted flex items-center justify-center overflow-hidden relative">
-                  {isEditMode && profilePicture ? (
+                  {profilePicture ? (
                     <img 
                       src={profilePicture} 
                       alt="Profile" 
@@ -426,19 +361,6 @@ export default function AddNewUser() {
                 Creating a user manually will generate a temporary password. The user will be prompted to change it upon their first login.
               </p>
             </div>
-          </div>
-        </div>
-        
-        {/* Submit Button */}
-        <div className="max-w-4xl mx-auto pt-8 border-t border-border">
-          <div className="flex justify-end gap-3">
-            <Link to={isEditMode ? `/users/profile/${id}` : "/users"} className="bg-muted text-foreground px-6 py-2.5 rounded-xl font-black items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              Cancel
-            </Link>
-            <button type="submit" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <Icon icon="lucide:check" className="text-lg" />
-              <span>{isEditMode ? 'Update User' : 'Create User'}</span>
-            </button>
           </div>
         </div>
       </form>

@@ -1,5 +1,5 @@
 // Mock Users Data
-export const mockUsers = [
+const defaultUsers = [
   {
     id: 'user-001',
     profile: {
@@ -481,3 +481,7 @@ export const getActiveUsers = () => {
     user.stats.totalBookings > 0
   );
 };
+
+// Load users from localStorage if available, otherwise use defaults
+const storedUsers = localStorage.getItem('mockUsers');
+export const mockUsers = storedUsers ? JSON.parse(storedUsers) : defaultUsers;

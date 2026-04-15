@@ -11,7 +11,7 @@ const FormSection = ({ title, icon, children }) => (
   </section>
 );
 
-const InputField = ({ label, placeholder, type = "text", prefix, defaultValue = "", className = "" }) => (
+const InputField = ({ label, placeholder, type = "text", prefix, value = "", onChange, className = "" }) => (
   <div className="space-y-2">
     <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</label>
     <div className="relative">
@@ -21,29 +21,31 @@ const InputField = ({ label, placeholder, type = "text", prefix, defaultValue = 
       <input
         type={type}
         placeholder={placeholder}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={onChange}
         className={`w-full ${prefix ? 'pl-8' : 'px-4'} py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none ${className}`}
       />
     </div>
   </div>
 );
 
-const SelectField = ({ label, children, defaultValue = "" }) => (
+const SelectField = ({ label, children, value = "", onChange }) => (
   <div className="space-y-2">
     <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</label>
-    <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer" defaultValue={defaultValue}>
+    <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer" value={value} onChange={onChange}>
       {children}
     </select>
   </div>
 );
 
-const TextAreaField = ({ label, placeholder, rows = "4", defaultValue = "" }) => (
+const TextAreaField = ({ label, placeholder, rows = "4", value = "", onChange }) => (
   <div className="space-y-2">
     <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</label>
     <textarea 
       rows={rows} 
       placeholder={placeholder}
-      defaultValue={defaultValue}
+      value={value}
+      onChange={onChange}
       className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none"
     />
   </div>

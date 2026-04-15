@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import { mockUsers } from '../data/mockUsers';
 
 const StatCard = ({ icon, label, value, trend, trendType }) => {
   const trendStyles = {
@@ -89,37 +90,48 @@ const UserRow = ({ name, email, avatar, role, status, verification, joined, id }
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Calculate stats from mock data
+  const stats = useMemo(() => {
+    const totalUsers = mockUsers.length;
+    const activeHosts = mockUsers.filter(user => user.role === 'host' && user.status === 'active').length;
+    const newThisMonth = mockUsers.filter(user => {
+      const joinDate = new Date(user.createdAt);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return joinDate >= thirtyDaysAgo;
+    }).length;
+    const suspended = mockUsers.filter(user => user.status !== 'active').length;
+
+    return { totalUsers, activeHosts, newThisMonth, suspended };
+  }, []);
+
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return mockUsers;
+    
+    return mockUsers.filter(user =>
+      user.profile.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.profile.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.profile.location.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
   const exportUsers = () => {
-    // Sample users data - in a real app, you would get this from state or API
-    const usersData = [
-      {
-        name: "Arlene McCoy",
-        email: "arlene.mccoy@example.com",
-        role: "Guest",
-        status: "Active",
-        verification: "Verified",
-        joined: "Oct 12, 2023",
-        id: "GS-94210"
-      },
-      {
-        name: "Cody Fisher",
-        email: "cody.fisher@example.com",
-        role: "Guest",
-        status: "Active",
-        verification: "Pending",
-        joined: "Oct 14, 2023",
-        id: "GS-94211"
-      },
-      {
-        name: "Dianne Russell",
-        email: "dianne.r@example.com",
-        role: "Host",
-        status: "Suspended",
-        verification: "Flagged",
-        joined: "Nov 02, 2023",
-        id: "GS-94212"
-      }
-    ];
+    // Use actual mock users data
+    const usersData = mockUsers.map(user => ({
+      name: `${user.profile.firstName} ${user.profile.lastName}`,
+      email: user.contact.email,
+      role: user.role.charAt(0).toUpperCase() + user.role.slice(1),
+      status: user.status.charAt(0).toUpperCase() + user.status.slice(1),
+      verification: user.verification.email && user.verification.phone ? 'Verified' : 'Pending',
+      joined: new Date(user.createdAt).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }),
+      id: user.id
+    }));
     
     // Create CSV content
     const csvContent = `Name,Email,Role,Status,Verification,Joined,User ID\n${
@@ -169,142 +181,76 @@ export default function Users() {
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 scroll-smooth">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <StatCard icon="lucide:users" label="Total Users" value="12,405" trend="12%" trendType="positive" />
-          <StatCard icon="lucide:home" label="Active Hosts" value="1,240" trend="5%" trendType="positive" />
-          <StatCard icon="lucide:calendar" label="New This Month" value="842" trend="NEW" trendType="neutral" />
-          <StatCard icon="lucide:shield" label="Suspended" value="24" trend="FLAGGED" trendType="negative" />
+          <StatCard icon="lucide:users" label="Total Users" value={stats.totalUsers.toLocaleString()} trend="12%" trendType="positive" />
+          <StatCard icon="lucide:home" label="Active Hosts" value={stats.activeHosts.toLocaleString()} trend="5%" trendType="positive" />
+          <StatCard icon="lucide:calendar" label="New This Month" value={stats.newThisMonth.toLocaleString()} trend="NEW" trendType="neutral" />
+          <StatCard icon="lucide:shield" label="Suspended" value={stats.suspended.toLocaleString()} trend="FLAGGED" trendType="negative" />
         </div>
 
         {/* Users Table */}
         <UniversalTable
           headers={['User', 'Role', 'Status', 'Verification', 'Joined', 'Actions']}
-          data={[
-            {
-              col0: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Arlene McCoy" />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-tertiary"></span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Arlene McCoy</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">arlene.mccoy@example.com</p>
-                  </div>
+          data={filteredUsers.map(user => ({
+            col0: ({ rowIndex }) => (
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img src={user.profile.avatar} className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt={`${user.profile.firstName} ${user.profile.lastName}`} />
+                  <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full ${
+                    user.status === 'active' ? 'bg-tertiary' : 
+                    user.status === 'suspended' ? 'bg-destructive' : 
+                    'bg-muted-foreground'
+                  }`}></span>
                 </div>
-              ),
-              col1: (
-                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-muted text-muted-foreground">
-                  Guest
-                </span>
-              ),
-              col2: (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-                  <span className="text-xs font-bold">Active</span>
+                <div>
+                  <p className="text-sm font-bold group-hover:text-primary transition-colors">{user.profile.firstName} {user.profile.lastName}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">{user.contact.email}</p>
                 </div>
-              ),
-              col3: (
+              </div>
+            ),
+            col1: (
+              <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${
+                user.role === 'host' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+              </span>
+            ),
+            col2: (
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${
+                  user.status === 'active' ? 'bg-tertiary animate-pulse' : 'bg-destructive'
+                }`}></span>
+                <span className="text-xs font-bold">{user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
+              </div>
+            ),
+            col3: (
+              user.verification.email && user.verification.phone ? (
                 <div className="flex items-center gap-2 text-tertiary">
                   <Icon icon="lucide:circle-check" className="text-sm" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
                 </div>
-              ),
-              col4: <span className="text-xs font-bold text-muted-foreground">Oct 12, 2023</span>,
-              col5: (
-                <Link 
-                  to="/users/profile/GS-94210"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View profile"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
-              )
-            },
-            {
-              col0: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src="https://randomuser.me/api/portraits/men/32.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Cody Fisher" />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-tertiary"></span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Cody Fisher</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">cody.fisher@example.com</p>
-                  </div>
-                </div>
-              ),
-              col1: (
-                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-muted text-muted-foreground">
-                  Guest
-                </span>
-              ),
-              col2: (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-                  <span className="text-xs font-bold">Active</span>
-                </div>
-              ),
-              col3: (
+              ) : (
                 <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-primary/10 text-primary">
                   Pending
                 </span>
-              ),
-              col4: <span className="text-xs font-bold text-muted-foreground">Oct 14, 2023</span>,
-              col5: (
-                <Link 
-                  to="/users/profile/GS-94211"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View profile"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
               )
-            },
-            {
-              col0: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src="https://randomuser.me/api/portraits/women/42.jpg" className="w-10 h-10 rounded-full border border-border ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Dianne Russell" />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-card rounded-full bg-destructive"></span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Dianne Russell</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">dianne.r@example.com</p>
-                  </div>
-                </div>
-              ),
-              col1: (
-                <span className="px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider bg-primary/10 text-primary">
-                  Host
-                </span>
-              ),
-              col2: (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-destructive"></span>
-                  <span className="text-xs font-bold">Suspended</span>
-                </div>
-              ),
-              col3: (
-                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-destructive/10 text-destructive">
-                  Flagged
-                </span>
-              ),
-              col4: <span className="text-xs font-bold text-muted-foreground">Nov 02, 2023</span>,
-              col5: (
-                <Link 
-                  to="/users/profile/GS-94212"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View profile"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
-              )
-            }
-          ]}
+            ),
+            col4: <span className="text-xs font-bold text-muted-foreground">{new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>,
+            col5: (
+              <Link 
+                to={`/users/profile/${user.id}`}
+                className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                aria-label="View profile"
+              >
+                <Icon icon="lucide:more-vertical" className="text-lg" />
+              </Link>
+            )
+          }))}
           searchPlaceholder="Search users..."
           filterButton={true}
           exportButton={true}
           onExport={exportUsers}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           mobileColumns={[0, 5]} // Show User and Actions on mobile
         />
       </div>
