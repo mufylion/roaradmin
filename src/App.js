@@ -16,6 +16,7 @@ import AddNewListing from './pages/AddNewListing';
 import EditListing from './pages/EditListing';
 import CreateBooking from './pages/CreateBooking';
 import AddNewUser from './pages/AddNewUser';
+import BookingDetails from './pages/BookingDetails';
 import RecordExpense from './pages/RecordExpense';
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
               <Route path="/bookings" element={<Bookings />} />
               <Route path="/bookings/create" element={<CreateBooking />} />
               <Route path="/bookings/edit/:id" element={<CreateBooking />} />
+              <Route path="/bookings/:id" element={<BookingDetails />} />
               <Route path="/users" element={<Users />} />
               <Route path="/users/add-new" element={<AddNewUser />} />
               <Route path="/users/edit/:id" element={<AddNewUser />} />

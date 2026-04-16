@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
 import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
+import { mockBookings, getBookingStats } from '../data/mockBookings';
 
 const StatCard = ({ title, value, trend, trendType }) => {
   const trendStyles = {
@@ -69,45 +70,42 @@ export default function Bookings() {
   const formatDate = useFormatDate();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Calculate stats from mock data
+  const stats = useMemo(() => getBookingStats(), []);
+
+  // Filter bookings based on search query
+  const filteredBookings = useMemo(() => {
+    if (!searchQuery) return mockBookings;
+    
+    return mockBookings.filter(booking =>
+      booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.guest.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.listing.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.status.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
   const exportBookings = () => {
-    // Sample bookings data - in a real app, you would get this from state or API
-    const bookingsData = [
-      {
-        id: "#BK-9021",
-        guest: "Arlene McCoy",
-        listing: "Skyline Penthouse Suite",
-        location: "Manhattan, New York",
-        dates: "Nov 12 - Nov 18",
-        nights: "6",
-        amount: "$2,450.00",
-        status: "Confirmed"
-      },
-      {
-        id: "#BK-9022",
-        guest: "Cody Fisher",
-        listing: "Coastal Breeze Villa",
-        location: "Malibu, California",
-        dates: "Dec 20 - Dec 27",
-        nights: "7",
-        amount: "$4,800.00",
-        status: "Pending"
-      },
-      {
-        id: "#BK-9023",
-        guest: "Jane Cooper",
-        listing: "Alpine Retreat Lodge",
-        location: "Aspen, Colorado",
-        dates: "Jan 05 - Jan 12",
-        nights: "7",
-        amount: "$3,100.00",
-        status: "Confirmed"
-      }
-    ];
+    // Use actual mock bookings data
+    const bookingsData = filteredBookings.map(booking => ({
+      id: booking.id,
+      guest: booking.guest.name,
+      email: booking.guest.email,
+      listing: booking.listing.title,
+      location: booking.listing.location,
+      checkIn: booking.dates.checkIn,
+      checkOut: booking.dates.checkOut,
+      nights: booking.dates.nights,
+      amount: formatCurrency(booking.pricing.total),
+      status: booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+    }));
     
     // Create CSV content
-    const csvContent = `Booking ID,Guest,Listing,Location,Dates,Nights,Amount,Status\n${
+    const csvContent = `Booking ID,Guest,Email,Listing,Location,Check-in,Check-out,Nights,Amount,Status\n${
       bookingsData.map(booking => 
-        `"${booking.id}","${booking.guest}","${booking.listing}","${booking.location}","${booking.dates}","${booking.nights}","${booking.amount}","${booking.status}"`
+        `"${booking.id}","${booking.guest}","${booking.email}","${booking.listing}","${booking.location}","${booking.checkIn}","${booking.checkOut}","${booking.nights}","${booking.amount}","${booking.status}"`
       ).join('\n')
     }`;
     
@@ -152,123 +150,59 @@ export default function Bookings() {
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard title="Total Bookings" value="4,821" trend="+8%" trendType="positive" />
-          <StatCard title="Pending" value="142" trend="New" trendType="new" />
-          <StatCard title="Check-ins Today" value="56" trend="Active" trendType="neutral" />
-          <StatCard title="Cancellations" value="12" trend="-2%" trendType="negative" />
+          <StatCard title="Total Bookings" value={stats.total.toLocaleString()} trend="+8%" trendType="positive" />
+          <StatCard title="Pending" value={stats.pending.toLocaleString()} trend="New" trendType="new" />
+          <StatCard title="Confirmed" value={stats.confirmed.toLocaleString()} trend="Active" trendType="neutral" />
+          <StatCard title="Cancelled" value={stats.cancelled.toLocaleString()} trend="-2%" trendType="negative" />
         </div>
 
         {/* Bookings Table */}
         <UniversalTable
           headers={['Booking ID', 'Guest', 'Listing', 'Check-in/out', 'Amount', 'Status', 'Actions']}
-          data={[
-            {
-              col0: '#BK-9021',
-              col1: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-10 h-10 rounded-full border border-border" alt="Arlene McCoy" />
-                  <div>
-                    <p className="text-sm font-bold">Arlene McCoy</p>
-                    <p className="text-[10px] text-muted-foreground">arlene.mccoy@example.com</p>
-                  </div>
-                </div>
-              ),
-              col2: (
+          data={filteredBookings.map(booking => ({
+            col0: booking.id,
+            col1: ({ rowIndex }) => (
+              <div className="flex items-center gap-3">
+                <img src={booking.guest.avatar} className="w-10 h-10 rounded-full border border-border" alt={booking.guest.name} />
                 <div>
-                  <p className="text-sm font-bold">Ocean Breeze Villa</p>
-                  <p className="text-[10px] text-muted-foreground">Malibu, CA</p>
+                  <p className="text-sm font-bold">{booking.guest.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{booking.guest.email}</p>
                 </div>
-              ),
-              col3: `${formatDate('2024-10-12')} - ${formatDate('2024-10-15')}`,
-              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(125000)}</span>,
-              col5: (
-                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
-                  Confirmed
-                </span>
-              ),
-              col6: (
-                <Link 
-                  to="/bookings/BK-9021"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View booking"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
-              )
-            },
-            {
-              col0: '#BK-9022',
-              col1: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <img src="https://randomuser.me/api/portraits/men/32.jpg" className="w-10 h-10 rounded-full border border-border" alt="Cody Fisher" />
-                  <div>
-                    <p className="text-sm font-bold">Cody Fisher</p>
-                    <p className="text-[10px] text-muted-foreground">cody.fisher@example.com</p>
-                  </div>
-                </div>
-              ),
-              col2: (
-                <div>
-                  <p className="text-sm font-bold">Mountain Retreat</p>
-                  <p className="text-[10px] text-muted-foreground">Aspen, CO</p>
-                </div>
-              ),
-              col3: `${formatDate('2024-10-14')} - ${formatDate('2024-10-18')}`,
-              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(240000)}</span>,
-              col5: (
-                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-primary/10 text-primary">
-                  Pending
-                </span>
-              ),
-              col6: (
-                <Link 
-                  to="/bookings/BK-9022"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View booking"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
-              )
-            },
-            {
-              col0: '#BK-9023',
-              col1: ({ rowIndex }) => (
-                <div className="flex items-center gap-3">
-                  <img src="https://randomuser.me/api/portraits/women/12.jpg" className="w-10 h-10 rounded-full border border-border" alt="Jane Cooper" />
-                  <div>
-                    <p className="text-sm font-bold">Jane Cooper</p>
-                    <p className="text-[10px] text-muted-foreground">jane.cooper@example.com</p>
-                  </div>
-                </div>
-              ),
-              col2: (
-                <div>
-                  <p className="text-sm font-bold">Urban Loft</p>
-                  <p className="text-[10px] text-muted-foreground">New York, NY</p>
-                </div>
-              ),
-              col3: `${formatDate('2024-10-20')} - ${formatDate('2024-10-22')}`,
-              col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(85000)}</span>,
-              col5: (
-                <span className="px-2 py-1 text-[10px] font-bold rounded-lg uppercase bg-tertiary/10 text-tertiary">
-                  Confirmed
-                </span>
-              ),
-              col6: (
-                <Link 
-                  to="/bookings/BK-9023"
-                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
-                  aria-label="View booking"
-                >
-                  <Icon icon="lucide:more-vertical" className="text-lg" />
-                </Link>
-              )
-            }
-          ]}
+              </div>
+            ),
+            col2: (
+              <div>
+                <p className="text-sm font-bold">{booking.listing.title}</p>
+                <p className="text-[10px] text-muted-foreground">{booking.listing.location}</p>
+              </div>
+            ),
+            col3: `${formatDate(booking.dates.checkIn)} - ${formatDate(booking.dates.checkOut)}`,
+            col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(booking.pricing.total)}</span>,
+            col5: (
+              <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
+                booking.status === 'confirmed' ? 'bg-tertiary/10 text-tertiary' : 
+                booking.status === 'pending' ? 'bg-primary/10 text-primary' : 
+                'bg-destructive/10 text-destructive'
+              }`}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </span>
+            ),
+            col6: (
+              <Link 
+                to={`/bookings/${booking.id}`}
+                className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary inline-flex"
+                aria-label="View booking"
+              >
+                <Icon icon="lucide:more-vertical" className="text-lg" />
+              </Link>
+            )
+          }))}
           searchPlaceholder="Search bookings..."
           filterButton={true}
           exportButton={true}
           onExport={exportBookings}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           mobileColumns={[0, 1, 5]} // Show Booking ID, Guest, and Status on mobile
         />
       </div>
