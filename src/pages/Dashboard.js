@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
@@ -16,7 +16,66 @@ import { Line } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import TimePeriodFilter from '../components/TimePeriodFilter';
 import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
+import { mockBookings, getBookingStats } from '../data/mockBookings';
+import { mockUsers, getUserStats } from '../data/mockUsers';
+import { mockFinancials } from '../data/mockFinancials';
+import { useTimeBasedData } from '../hooks/useTimeBasedData';
+
+// Notification Item component for Dashboard
+const DashboardNotificationItem = ({
+  icon,
+  iconBgClass,
+  iconColorClass,
+  title,
+  time,
+  description,
+  actionLabel,
+  showBorder = false,
+  category = null,
+  relatedId = null
+}) => (
+  <div className="bg-card p-4 rounded-xl border border-border shadow-sm hover:shadow-md transition-all group flex gap-4 items-start relative overflow-hidden">
+    {showBorder && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>}
+    <div className="w-10 h-10 flex-shrink-0">
+      <div className={`w-full h-full ${iconBgClass} rounded-xl flex items-center justify-center`}>
+        <Icon icon={icon} className={`text-xl ${iconColorClass}`} />
+      </div>
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <h3 className="text-sm font-bold text-foreground truncate">{title}</h3>
+        <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tighter">{time}</span>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      {actionLabel && (
+        category === 'bookings' && relatedId ? (
+          <Link 
+            to={`/bookings/${relatedId}`}
+            className="text-xs font-bold text-primary hover:underline underline-offset-4"
+          >
+            {actionLabel}
+          </Link>
+        ) : category === 'users' && relatedId ? (
+          <Link 
+            to={`/users/${relatedId}`}
+            className="text-xs font-bold text-primary hover:underline underline-offset-4"
+          >
+            {actionLabel}
+          </Link>
+        ) : (
+          <button className="text-xs font-bold text-primary hover:underline underline-offset-4">
+            {actionLabel}
+          </button>
+        )
+      )}
+    </div>
+    <div className="flex flex-col items-end gap-2 shrink-0">
+      <Icon icon="lucide:more-vertical" className="text-muted-foreground cursor-pointer hover:text-foreground" />
+    </div>
+  </div>
+);
 
 // Register ChartJS components
 ChartJS.register(
@@ -71,25 +130,145 @@ const ActivityItem = ({ icon, bgClass, iconColor, title, subtitle, time }) => (
 export default function Dashboard() {
   const formatCurrency = useFormatCurrency();
   const formatDate = useFormatDate();
-  const chartData = {
-    labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-    datasets: [
+  const [chartPeriod, setChartPeriod] = useState('This Month');
+
+  // Calculate stats from mock data
+  const bookingStats = useMemo(() => getBookingStats(), []);
+  const userStats = useMemo(() => getUserStats(), []);
+  
+  // Calculate truly active bookings (currently staying)
+  const activeBookings = useMemo(() => {
+    // Use current date (April 2026)
+    const today = new Date();
+    return mockBookings.filter(booking => {
+      if (booking.status !== 'confirmed') return false;
+      const checkIn = new Date(booking.dates.checkIn);
+      const checkOut = new Date(booking.dates.checkOut);
+      return checkIn <= today && checkOut >= today;
+    }).length;
+  }, []);
+
+  // Use reusable time-based data hook
+  const timeBasedData = useTimeBasedData(chartPeriod, mockBookings);
+
+  // Generate recent activity notifications
+  const recentActivity = useMemo(() => {
+    const activities = [];
+    
+    // Add booking-related notifications
+    const recentBookings = mockBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'pending')
+      .slice(0, 3);
+    
+    recentBookings.forEach((booking, index) => {
+      const bookingDate = new Date(booking.createdAt);
+      const now = new Date();
+      const diffMs = now - bookingDate;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      activities.push({
+        id: 1000 + index,
+        unread: Math.random() > 0.5,
+        icon: "lucide:calendar-check",
+        iconBgClass: "bg-primary/10",
+        iconColorClass: "text-primary",
+        title: booking.status === 'confirmed' ? "New Booking Confirmed" : "New Booking Request",
+        time: diffDays > 0 ? `${diffDays} day${diffDays === 1 ? '' : 's'} ago` : `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`,
+        description: <>
+          Guest <span className="font-bold text-foreground">{booking.guest.name}</span> -{' '}
+          <span className="font-bold text-foreground">{booking.listing.title}</span>
+        </>,
+        actionLabel: "View Details",
+        category: "bookings",
+        relatedId: booking.id
+      });
+    });
+
+    // Add user-related notifications
+    const recentUsers = mockUsers.filter(u => u.createdAt).slice(-2);
+    recentUsers.forEach((user, index) => {
+      const userDate = new Date(user.createdAt);
+      const now = new Date();
+      const diffMs = now - userDate;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      activities.push({
+        id: 2000 + index,
+        unread: Math.random() > 0.5,
+        icon: "lucide:user-plus",
+        iconBgClass: "bg-purple-500/10",
+        iconColorClass: "text-purple-500",
+        title: "New User Registration",
+        time: diffDays > 0 ? `${diffDays} day${diffDays === 1 ? '' : 's'} ago` : `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`,
+        description: <>
+          <span className="font-bold text-foreground">{user.name}</span> joined the platform.
+        </>,
+        actionLabel: "View Profile",
+        category: "users",
+        relatedId: user.id
+      });
+    });
+
+    // Add system notifications
+    const systemNotifications = [
       {
-        label: 'Revenue',
-        data: [4500000, 5200000, 6100000, 5800000, 12450000], // Converting to Naira
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        pointBackgroundColor: '#ffffff',
-        pointBorderColor: '#2563eb',
-        pointBorderWidth: 2,
+        id: 3001,
+        unread: true,
+        icon: "lucide:shield-alert",
+        iconBgClass: "bg-orange-500/10",
+        iconColorClass: "text-orange-500",
+        title: "Host Verification Required",
+        time: "2 hours ago",
+        description: <>
+          Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for{' '}
+          verification. Action required before listing activation.
+        </>,
+        actionLabel: "Review Documents",
+        category: "system"
       },
-    ],
-  };
+      {
+        id: 3002,
+        unread: false,
+        icon: "lucide:credit-card",
+        iconBgClass: "bg-muted",
+        iconColorClass: "text-muted-foreground",
+        title: "Payout Processed Successfully",
+        time: "6 hours ago",
+        description: <>
+          Weekly payout of ₦1,245,000 has been initiated to your primary bank account ending in ****4291.
+        </>,
+        actionLabel: "View Details",
+        category: "system"
+      }
+    ];
+
+    return [...activities, ...systemNotifications];
+  }, []);
+
+  // Generate chart data from time-based hook
+  const chartData = useMemo(() => {
+    return {
+      labels: timeBasedData.labels,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: timeBasedData.revenueData,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#2563eb',
+          pointBorderWidth: 2,
+        },
+      ],
+    };
+  }, [timeBasedData]);
 
   const chartOptions = {
     responsive: true,
@@ -115,7 +294,7 @@ export default function Dashboard() {
         ticks: {
           font: { size: 10, weight: 'bold' },
           color: '#64748b',
-          callback: (val) => '$' + val,
+          callback: (val) => formatCurrency(val),
         },
       },
       x: {
@@ -158,32 +337,32 @@ export default function Dashboard() {
           <StatCard 
             icon="lucide:activity" 
             label="Total Revenue" 
-            value={formatCurrency(4825000)} // Converting to Naira
-            trend="12.5%" 
-            colorClass="text-primary" 
-            bgClass="bg-primary/10" 
+            value={formatCurrency(timeBasedData.totalRevenue)}
+            trend={timeBasedData.monthlyGrowth > 0 ? `+${timeBasedData.monthlyGrowth}%` : "No activity this year"} 
+            colorClass={timeBasedData.monthlyGrowth > 0 ? "text-primary" : "text-muted-foreground"} 
+            bgClass={timeBasedData.monthlyGrowth > 0 ? "bg-primary/10" : "bg-muted"} 
           />
           <StatCard 
             icon="lucide:calendar" 
             label="Active Bookings" 
-            value="154" 
-            trend="8.2%" 
+            value={activeBookings} 
+            trend={activeBookings > 0 ? "+8.2%" : "None currently"} 
             colorClass="text-tertiary" 
             bgClass="bg-tertiary/10" 
           />
           <StatCard 
             icon="lucide:layers" 
             label="Total Listings" 
-            value="42" 
+            value={userStats.totalListings} 
             trend="Stable" 
             colorClass="text-orange-500" 
             bgClass="bg-orange-500/10" 
           />
           <StatCard 
             icon="lucide:users" 
-            label="New Users" 
-            value="1,205" 
-            trend="+ 24" 
+            label="Total Users" 
+            value={userStats.total} 
+            trend={`+${userStats.newThisMonth}`} 
             colorClass="text-purple-500" 
             bgClass="bg-purple-500/10" 
           />
@@ -195,15 +374,14 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-heading font-bold">Revenue Performance</h2>
-                <p className="text-xs text-muted-foreground">Monitor daily revenue trends</p>
+                <p className="text-xs text-muted-foreground">Monitor {chartPeriod.toLowerCase()} revenue trends</p>
               </div>
               <div className="flex items-center gap-2">
                 <button className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors">Export</button>
-                <select className="bg-muted border-none rounded-lg text-xs px-3 py-1.5 font-bold outline-none focus:ring-2 focus:ring-primary cursor-pointer">
-                  <option>Last 7 Days</option>
-                  <option>Last 30 Days</option>
-                  <option>This Year</option>
-                </select>
+                <TimePeriodFilter 
+                  value={chartPeriod}
+                  onChange={setChartPeriod}
+                />
               </div>
             </div>
             <div className="h-64">
@@ -215,38 +393,21 @@ export default function Dashboard() {
           <div className="bg-card p-6 rounded-2xl border border-border shadow-sm flex flex-col">
             <h2 className="text-lg font-heading font-bold mb-6">Recent Activity</h2>
             <div className="space-y-6 flex-1">
-              <ActivityItem 
-                icon="lucide:check-circle" 
-                bgClass="bg-blue-50 hover:bg-blue-100" 
-                iconColor="text-primary" 
-                title="New Booking Confirmed" 
-                subtitle="Modern Loft in NYC · $450.00" 
-                time="2 mins ago" 
-              />
-              <ActivityItem 
-                icon="lucide:plus" 
-                bgClass="bg-orange-50 hover:bg-orange-100" 
-                iconColor="text-orange-500" 
-                title="New Listing Added" 
-                subtitle="Seaside Villa, Malibu" 
-                time="45 mins ago" 
-              />
-              <ActivityItem 
-                icon="lucide:user-plus" 
-                bgClass="bg-purple-50 hover:bg-purple-100" 
-                iconColor="text-purple-500" 
-                title="New User Registered" 
-                subtitle="Sarah Jenkins (Guest)" 
-                time="1 hour ago" 
-              />
-              <ActivityItem 
-                icon="lucide:circle-alert" 
-                bgClass="bg-destructive/10 hover:bg-destructive/20" 
-                iconColor="text-destructive" 
-                title="Payment Failed" 
-                subtitle="Booking #RH-9421 · $120.00" 
-                time="3 hours ago" 
-              />
+              {recentActivity.slice(0, 3).map((activity, index) => (
+                <DashboardNotificationItem 
+                  key={activity.id}
+                  icon={activity.icon}
+                  iconBgClass={activity.iconBgClass}
+                  iconColorClass={activity.iconColorClass}
+                  title={activity.title}
+                  time={activity.time}
+                  description={activity.description}
+                  actionLabel={activity.actionLabel}
+                  showBorder={activity.unread}
+                  category={activity.category}
+                  relatedId={activity.relatedId}
+                />
+              ))}
             </div>
             <Link to="/notifications" className="w-full mt-6 py-2.5 bg-muted hover:bg-muted/80 text-sm font-bold rounded-xl transition-all active:scale-95 text-center block">View All Activity</Link>
           </div>
@@ -264,58 +425,35 @@ export default function Dashboard() {
           
           <UniversalTable
             headers={['Guest', 'Property', 'Check In', 'Amount', 'Status', 'Actions']}
-            data={[
-              {
-                col0: ({ rowIndex }) => (
-                  <div className="flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="Sophia Miller" />
-                    <span className="text-sm font-semibold">Sophia Miller</span>
-                  </div>
-                ),
-                col1: 'Downtown Loft, NY',
-                col2: formatDate('2024-10-24'),
-                col3: <span className="text-sm font-bold">{formatCurrency(45000)}</span>,
-                col4: (
-                  <span className="px-2 py-1 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-lg uppercase">
-                    Confirmed
-                  </span>
-                ),
-                col5: (
-                  <Link 
-                    to="/bookings/BK-9021"
-                    className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all inline-flex"
-                    aria-label="View booking"
-                  >
-                    <Icon icon="lucide:move-right" />
-                  </Link>
-                )
-              },
-              {
-                col0: ({ rowIndex }) => (
-                  <div className="flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/men/86.jpg" className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt="James Wilson" />
-                    <span className="text-sm font-semibold">James Wilson</span>
-                  </div>
-                ),
-                col1: 'Mountain Escape',
-                col2: formatDate('2024-10-26'),
-                col3: <span className="text-sm font-bold">{formatCurrency(120000)}</span>,
-                col4: (
-                  <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">
-                    Pending
-                  </span>
-                ),
-                col5: (
-                  <Link 
-                    to="/bookings/BK-9022"
-                    className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all inline-flex"
-                    aria-label="View booking"
-                  >
-                    <Icon icon="lucide:move-right" />
-                  </Link>
-                )
-              }
-            ]}
+            data={mockBookings.slice(0, 5).map(booking => ({
+              col0: ({ rowIndex }) => (
+                <div className="flex items-center gap-3">
+                  <img src={booking.guest.avatar} className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt={booking.guest.name} />
+                  <span className="text-sm font-semibold">{booking.guest.name}</span>
+                </div>
+              ),
+              col1: booking.listing.title,
+              col2: formatDate(booking.dates.checkIn),
+              col3: <span className="text-sm font-bold">{formatCurrency(booking.pricing.total)}</span>,
+              col4: (
+                <span className={`px-2 py-1 text-[10px] font-black rounded-lg uppercase ${
+                  booking.status === 'confirmed' ? 'bg-tertiary/10 text-tertiary' : 
+                  booking.status === 'pending' ? 'bg-primary/10 text-primary' : 
+                  'bg-destructive/10 text-destructive'
+                }`}>
+                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                </span>
+              ),
+              col5: (
+                <Link 
+                  to={`/bookings/${booking.id}`}
+                  className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-all inline-flex"
+                  aria-label="View booking"
+                >
+                  <Icon icon="lucide:move-right" />
+                </Link>
+              )
+            }))}
             searchPlaceholder="Search bookings..."
             filterButton={true}
             exportButton={true}

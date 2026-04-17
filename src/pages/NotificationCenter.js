@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
+import { mockBookings } from '../data/mockBookings';
+import { mockUsers } from '../data/mockUsers';
 
 const NotificationItem = ({
   unread = false,
@@ -15,7 +18,9 @@ const NotificationItem = ({
   actionClass = "text-primary",
   showBorder = false,
   onDismiss,
-  onMarkAsRead
+  onMarkAsRead,
+  relatedId = null, // New prop for linking
+  category = null    // New prop for categorizing actions
 }) => (
   <div
     className={`bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all group flex gap-4 items-start relative overflow-hidden ${
@@ -39,9 +44,25 @@ const NotificationItem = ({
       {(actionLabel || unread) && (
         <div className="flex items-center gap-4 mt-3">
           {actionLabel && (
-            <button className={`text-xs font-bold hover:underline underline-offset-4 ${actionClass}`}>
-              {actionLabel}
-            </button>
+            category === 'bookings' && relatedId ? (
+              <Link 
+                to={`/bookings/${relatedId}`}
+                className={`text-xs font-bold hover:underline underline-offset-4 ${actionClass}`}
+              >
+                {actionLabel}
+              </Link>
+            ) : category === 'users' && relatedId ? (
+              <Link 
+                to={`/users/${relatedId}`}
+                className={`text-xs font-bold hover:underline underline-offset-4 ${actionClass}`}
+              >
+                {actionLabel}
+              </Link>
+            ) : (
+              <button className={`text-xs font-bold hover:underline underline-offset-4 ${actionClass}`}>
+                {actionLabel}
+              </button>
+            )
           )}
           {unread && (
             <button 
@@ -61,84 +82,164 @@ const NotificationItem = ({
   </div>
 );
 
+// Helper function to calculate time ago
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const diffMs = now - new Date(date);
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Debug: Log the calculation
+    console.log('Time calculation debug:', {
+      now: now.toISOString(),
+      date: new Date(date).toISOString(),
+      diffMs,
+      diffHours,
+      diffDays
+    });
+    
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else if (diffHours > 24) { // More than 24 hours
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    } else if (diffMs > 60000) { // More than 1 minute
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    } else {
+      return 'Just now';
+    }
+  };
+
 export default function NotificationCenter() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      unread: true,
-      icon: "lucide:calendar-check",
-      iconBgClass: "bg-primary/10",
-      iconColorClass: "text-primary",
-      title: "New High-Value Booking Confirmed",
-      time: "2 mins ago",
-      description: <>
-        Guest <span className="font-bold text-foreground">Sophia Miller</span> confirmed a 7-night stay at{' '}
-        <span className="font-bold text-foreground">Luxury Penthouse NYC</span>. Total value: $4,250.00.
-      </>,
-      actionLabel: "View Booking Details",
-      category: "bookings"
-    },
-    {
-      id: 2,
-      unread: true,
-      icon: "lucide:shield-alert",
-      iconBgClass: "bg-orange-500/10",
-      iconColorClass: "text-orange-500",
-      title: "Host Verification Required",
-      time: "15 mins ago",
-      description: <>
-        Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for
-        verification. Action required before listing activation.
-      </>,
-      actionLabel: "Review Documents",
-      actionClass: "text-orange-500",
-      category: "system"
-    },
-    {
-      id: 3,
-      unread: false,
-      icon: "lucide:credit-card",
-      iconBgClass: "bg-muted",
-      iconColorClass: "text-muted-foreground",
-      title: "Payout Processed Successfully",
-      time: "2 hours ago",
-      description: "Weekly payout of $12,480.00 has been initiated to your primary bank account ending in ****4291.",
-      category: "system"
-    },
-    {
-      id: 4,
-      unread: false,
-      icon: "lucide:user-plus",
-      iconBgClass: "bg-purple-500/10",
-      iconColorClass: "text-purple-500",
-      title: "New User Registration Milestone",
-      time: "5 hours ago",
-      description: <>
-        RoarHomes has reached <span className="font-bold text-foreground">1,200 active users</span>! New user Sarah
-        Jenkins just joined the community.
-      </>,
-      category: "system"
-    },
-    {
-      id: 5,
-      unread: false,
-      icon: "lucide:circle-alert",
-      iconBgClass: "bg-destructive/10",
-      iconColorClass: "text-destructive",
-      title: "Security Alert: Unusual Login",
-      time: "Yesterday",
-      description: <>
-        Unusual login detected for admin account <span className="font-bold text-foreground">j.doe@roarhomes.com</span>{' '}
-        from a new IP in London, UK.
-      </>,
-      actionLabel: "Review Security Log",
-      actionClass: "text-destructive",
-      category: "system"
-    }
-  ]);
+  // Generate all notifications from existing mock data
+  const notifications = useMemo(() => {
+    let allNotifications = [];
+    
+    // Generate booking-related notifications
+    const recentBookings = mockBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'pending')
+      .slice(0, 3);
+    
+    recentBookings.forEach((booking, index) => {
+      const bookingDate = new Date(booking.createdAt);
+      const now = new Date();
+      const diffMs = now - bookingDate;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      allNotifications.push({
+        id: 1000 + index,
+        unread: Math.random() > 0.5,
+        icon: "lucide:calendar-check",
+        iconBgClass: "bg-primary/10",
+        iconColorClass: "text-primary",
+        title: booking.status === 'confirmed' ? "New Booking Confirmed" : "New Booking Request",
+        time: getTimeAgo(bookingDate),
+        description: <>
+          Guest <span className="font-bold text-foreground">{booking.guest.name}</span> -{' '}
+          <span className="font-bold text-foreground">{booking.dates.nights}-night stay at {booking.listing.title}</span>. Total value: ₦{booking.pricing.total.toLocaleString()}.
+        </>,
+        actionLabel: "View Details",
+        category: "bookings",
+        relatedId: booking.id
+      });
+    });
+
+    // Generate user-related notifications
+    const recentUsers = mockUsers
+      .filter(u => u.createdAt)
+      .slice(-2);
+      
+    recentUsers.forEach((user, index) => {
+      const userDate = new Date(user.createdAt);
+      const now = new Date();
+      const diffMs = now - userDate;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      allNotifications.push({
+        id: 2000 + index,
+        unread: Math.random() > 0.5,
+        icon: "lucide:user-plus",
+        iconBgClass: "bg-purple-500/10",
+        iconColorClass: "text-purple-500",
+        title: "New User Registration",
+        time: getTimeAgo(userDate),
+        description: <>
+          <span className="font-bold text-foreground">{user.name}</span> joined the platform.
+        </>,
+        actionLabel: "View Profile",
+        category: "users",
+        relatedId: user.id
+      });
+    });
+
+    // Generate system notifications with dynamic timestamps based on mock data
+    const getLatestBookingDate = () => {
+      const dates = mockBookings.map(b => new Date(b.createdAt));
+      return new Date(Math.max(...dates));
+    };
+
+    const getLatestUserDate = () => {
+      const dates = mockUsers.filter(u => u.createdAt).map(u => new Date(u.createdAt));
+      return new Date(Math.max(...dates));
+    };
+
+    const systemNotifications = [
+      {
+        id: 3001,
+        unread: true,
+        icon: "lucide:shield-alert",
+        iconBgClass: "bg-orange-500/10",
+        iconColorClass: "text-orange-500",
+        title: "Host Verification Required",
+        time: getTimeAgo(new Date(getLatestBookingDate().getTime() - 2 * 60 * 60 * 1000)), // 2 hours before latest booking
+        description: <>
+          Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for{' '}
+          verification. Action required before listing activation.
+        </>,
+        actionLabel: "Review Documents",
+        category: "system"
+      },
+      {
+        id: 3002,
+        unread: false,
+        icon: "lucide:credit-card",
+        iconBgClass: "bg-muted",
+        iconColorClass: "text-muted-foreground",
+        title: "Payout Processed Successfully",
+        time: getTimeAgo(new Date(getLatestBookingDate().getTime() - 6 * 60 * 60 * 1000)), // 6 hours before latest booking
+        description: <>
+          Weekly payout of ₦1,245,000 has been initiated to your primary bank account ending in ****4291.
+        </>,
+        actionLabel: "View Details",
+        category: "system"
+      },
+      {
+        id: 3003,
+        unread: true,
+        icon: "lucide:circle-alert",
+        iconBgClass: "bg-destructive/10",
+        iconColorClass: "text-destructive",
+        title: "Security Alert: Unusual Login",
+        time: getTimeAgo(new Date(getLatestBookingDate().getTime() - 2 * 24 * 60 * 60 * 1000)), // 2 days before latest booking
+        description: <>
+          Unusual login detected for admin account <span className="font-bold text-foreground">j.doe@roarhomes.com</span>{' '}
+          from a new IP in London, UK.
+        </>,
+        actionLabel: "Review Security Log",
+        category: "system"
+      }
+    ];
+
+    // Combine all notifications
+    return [...allNotifications, ...systemNotifications];
+  }, []);  
 
   const tabs = ['All', 'Unread', 'System', 'Bookings'];
 
@@ -266,6 +367,8 @@ export default function NotificationCenter() {
                 actionLabel={notification.actionLabel}
                 actionClass={notification.actionClass}
                 onMarkAsRead={() => dismissNotification(notification.id)}
+                category={notification.category}
+                relatedId={notification.relatedId}
               />
             ))
           ) : (

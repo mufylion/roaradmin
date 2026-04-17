@@ -482,6 +482,22 @@ export const getActiveUsers = () => {
   );
 };
 
+export const getUserStats = () => {
+  const totalUsers = mockUsers.length;
+  const activeUsers = getActiveUsers().length;
+  const newUsers = getNewUsers(30).length;
+  const totalListings = mockUsers.reduce((total, user) => {
+    return total + (user.role === 'host' ? 1 : 0);
+  }, 0);
+
+  return {
+    total: totalUsers,
+    active: activeUsers,
+    newThisMonth: newUsers,
+    totalListings: totalListings
+  };
+};
+
 // Load users from localStorage if available, otherwise use defaults
 const storedUsers = localStorage.getItem('mockUsers');
 export const mockUsers = storedUsers ? JSON.parse(storedUsers) : defaultUsers;

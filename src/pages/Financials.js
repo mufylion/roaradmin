@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
@@ -15,7 +15,11 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
+import TimePeriodFilter from '../components/TimePeriodFilter';
 import { useFormatCurrency, useFormatDate, DEFAULT_CONFIG } from '../config/useAppConfig';
+import { mockFinancials } from '../data/mockFinancials';
+import { mockBookings } from '../data/mockBookings';
+import { useTimeBasedData } from '../hooks/useTimeBasedData';
 
 // Register ChartJS components
 ChartJS.register(
@@ -126,6 +130,7 @@ export default function Financials() {
   const formatCurrency = useFormatCurrency();
   const formatDate = useFormatDate();
   const [activeFilter, setActiveFilter] = useState('All');
+  const [timePeriod, setTimePeriod] = useState('This Month');
 
   const downloadReport = () => {
     // Filter transactions based on active filter
@@ -151,41 +156,35 @@ export default function Financials() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Sample transactions data
-  const transactions = [
-    {
-      id: '#T-001',
-      date: formatDate('2024-10-15'),
-      category: 'Income',
-      description: 'Platform revenue from booking commissions',
-      amount: formatCurrency(250000), // Converting to Naira
-      status: 'Completed'
-    },
-    {
-      id: '#T-002',
-      date: formatDate('2024-10-14'),
-      category: 'Expense',
-      description: 'Marketing campaign - Google Ads',
-      amount: formatCurrency(45000), // Converting to Naira
-      status: 'Completed'
-    },
-    {
-      id: '#T-003',
-      date: formatDate('2024-10-12'),
-      category: 'Income',
-      description: 'Host subscription fees',
-      amount: formatCurrency(120000), // Converting to Naira
-      status: 'Completed'
-    },
-    {
-      id: '#T-004',
-      date: formatDate('2024-10-10'),
-      category: 'Expense',
-      description: 'Server maintenance and hosting',
-      amount: formatCurrency(32000), // Converting to Naira
-      status: 'Pending'
+  // Use reusable time-based data hook
+  const timeBasedData = useTimeBasedData(timePeriod, mockBookings);
+
+  // Use mock transactions data with time period filtering
+  const transactions = useMemo(() => {
+    let allTransactions = mockFinancials.transactions;
+    
+    // Filter transactions based on time period
+    if (timePeriod !== 'This Year') {
+      const currentYear = new Date().getFullYear();
+      const currentYearTransactions = allTransactions.filter(t => 
+        new Date(t.date).getFullYear() === currentYear
+      );
+      
+      if (timePeriod === 'This Week' || timePeriod === 'This Month') {
+        const currentMonth = new Date().getMonth();
+        allTransactions = currentYearTransactions.filter(t => 
+          new Date(t.date).getMonth() === currentMonth
+        );
+      }
     }
-  ];
+    
+    return allTransactions.map(transaction => ({
+      ...transaction,
+      date: formatDate(transaction.date),
+      amount: formatCurrency(transaction.amount),
+      status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+    }));
+  }, [timePeriod]);
 
   // Filter transactions based on active filter
   const filteredTransactions = transactions.filter(transaction => {
@@ -197,17 +196,17 @@ export default function Financials() {
 
   // Chart Data
   const barData = {
-    labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+    labels: timeBasedData.labels,
     datasets: [
       {
         label: 'Revenue',
-        data: [4500000, 5200000, 6100000, 5800000, 12450000], // Converting to Naira
+        data: timeBasedData.revenueData,
         backgroundColor: '#2563eb',
         borderRadius: 6,
       },
       {
         label: 'Expenses',
-        data: [1200000, 1500000, 1800000, 1400000, 3240000], // Converting to Naira
+        data: timeBasedData.expenseData,
         backgroundColor: '#e2e8f0',
         borderRadius: 6,
       },
@@ -236,15 +235,17 @@ export default function Financials() {
   };
 
   const doughnutData = {
-    labels: ['Maintenance', 'Marketing', 'Staff', 'Platform'],
+    labels: mockFinancials.expenses.categories.map(item => item.category),
     datasets: [
       {
-        data: [35, 25, 20, 20],
+        data: mockFinancials.expenses.categories.map(item => item.percentage),
         backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444'],
         borderWidth: 0,
       },
     ],
   };
+
+  // Use timeBasedData for dynamic summary (already calculated in hook)
 
   const doughnutOptions = {
     responsive: true,
@@ -263,6 +264,12 @@ export default function Financials() {
       <PageHeader
         title="Financials & Expenses"
         description="Track revenue, monitor operational costs, and manage payouts."
+        customContent={
+          <TimePeriodFilter 
+            value={timePeriod}
+            onChange={setTimePeriod}
+          />
+        }
         actions={[
           {
             type: 'button',
@@ -288,26 +295,26 @@ export default function Financials() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
             title="Gross Revenue" 
-            value={formatCurrency(12450000)} // Converting to Naira (assuming 1 USD = 100 NGN)
-            trend="+18% vs last month" 
-            trendType="up" 
+            value={formatCurrency(timeBasedData.totalRevenue)}
+            trend={timeBasedData.monthlyGrowth > 0 ? `+${timeBasedData.monthlyGrowth}% vs last month` : "No activity this period"} 
+            trendType={timeBasedData.monthlyGrowth > 0 ? "up" : "neutral"} 
           />
           <StatCard 
             title="Total Expenses" 
-            value={formatCurrency(3240000)} // Converting to Naira
-            trend="+5% vs last month" 
+            value={formatCurrency(timeBasedData.totalExpenses)}
+            trend={timeBasedData.totalExpenses > 0 ? `+${(timeBasedData.monthlyGrowth * 0.3).toFixed(1)}% vs last month` : "No expenses this period"} 
             trendType="down" 
           />
           <StatCard 
             title="Net Profit" 
-            value={formatCurrency(9210000)} // Converting to Naira
-            trend="+22% vs last month" 
-            trendType="up" 
+            value={formatCurrency(timeBasedData.netProfit)}
+            trend={timeBasedData.netProfit > 0 ? `+${timeBasedData.monthlyGrowth}% vs last month` : "No profit this period"} 
+            trendType={timeBasedData.netProfit > 0 ? "up" : "neutral"} 
           />
           <StatCard 
             title="Pending Payouts" 
-            value={formatCurrency(1820000)} // Converting to Naira
-            trend="42 pending transfers" 
+            value={formatCurrency(mockFinancials.payouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0) || 1820000)}
+            trend={`${mockFinancials.payouts.length} pending transfers`} 
             trendType="neutral" 
             icon="lucide:clock" 
           />
