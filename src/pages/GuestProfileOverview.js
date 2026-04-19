@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import { mockUsers, getUserById } from '../data/mockUsers';
+import { mockBookings } from '../data/mockBookings.js';
+import { generateFinancialSummary } from '../data/dataIntegrator.js';
 import { useFormatCurrency } from '../config/useAppConfig';
 
 const BookingCard = ({ 
@@ -60,6 +62,8 @@ export default function GuestProfileOverview() {
   const { id: userId } = useParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userBookings, setUserBookings] = useState([]);
+  const [financialData, setFinancialData] = useState(null);
   const formatCurrency = useFormatCurrency();
 
   useEffect(() => {
@@ -68,6 +72,43 @@ export default function GuestProfileOverview() {
     setUser(foundUser);
     setLoading(false);
   }, [userId]);
+
+  // Load user's bookings and financial data
+  useEffect(() => {
+    if (user) {
+      // Filter bookings for this user
+      const bookings = mockBookings.filter(booking => booking.guest.id === user.id);
+      setUserBookings(bookings);
+      
+      // Generate financial summary for this user
+      const financials = generateFinancialSummary();
+      setFinancialData(financials);
+    }
+  }, [user]);
+
+  // Calculate lifetime value metrics
+  const calculateLifetimeValue = () => {
+    if (!userBookings.length) {
+      return {
+        totalSpent: 0,
+        totalBookings: 0,
+        averageBookingValue: 0,
+        completedBookings: 0
+      };
+    }
+
+    const completedBookings = userBookings.filter(booking => booking.status === 'completed');
+    const totalSpent = completedBookings.reduce((sum, booking) => sum + booking.pricing.total, 0);
+    const totalBookings = completedBookings.length;
+    const averageBookingValue = totalBookings > 0 ? totalSpent / totalBookings : 0;
+
+    return {
+      totalSpent,
+      totalBookings,
+      averageBookingValue,
+      completedBookings: completedBookings.length
+    };
+  };
 
   if (loading) {
     return (
@@ -175,20 +216,20 @@ export default function GuestProfileOverview() {
               <span className="text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary px-3 py-1 rounded-full">Lifetime Value</span>
             </div>
             <div>
-              <h3 className="text-4xl font-bold mb-1 text-foreground">{formatCurrency(user.stats.totalSpent || 0)}</h3>
-              <p className="text-muted-foreground text-sm font-medium">Across {user.stats.totalBookings || 0} completed bookings</p>
+              <h3 className="text-4xl font-bold mb-1 text-foreground">{formatCurrency(calculateLifetimeValue().totalSpent)}</h3>
+              <p className="text-muted-foreground text-sm font-medium">Across {calculateLifetimeValue().totalBookings} completed bookings</p>
             </div>
             <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
               <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Avg. Booking Value</p>
+                <p className="font-bold mt-1 text-foreground">{formatCurrency(calculateLifetimeValue().averageBookingValue)}</p>
+              </div>
+              <div className="text-right">
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rating</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Icon icon="lucide:star" className="text-tertiary" />
                   <span className="font-bold text-foreground">{user.stats.averageRating || 'N/A'}</span>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Response Rate</p>
-                <p className="font-bold mt-1 text-foreground">{user.stats.responseRate || 0}%</p>
               </div>
             </div>
           </div>
@@ -227,40 +268,33 @@ export default function GuestProfileOverview() {
           {/* Tab Content */}
           {activeTab === 'Bookings' && (
             <div className="space-y-6">
-              {/* Bookings Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <BookingCard 
-                  status="Ongoing"
-                  refId="#BK-8821"
-                  title="Skyline Penthouse Suite"
-                  location="Manhattan, New York"
-                  checkIn="Nov 12, 2023"
-                  checkOut="Nov 18, 2023"
-                  price="$2,450.00"
-                  statusColor="border-tertiary"
-                />
-                <BookingCard 
-                  status="Upcoming"
-                  refId="#BK-9012"
-                  title="Coastal Breeze Villa"
-                  location="Malibu, California"
-                  checkIn="Dec 20, 2023"
-                  checkOut="Dec 27, 2023"
-                  price="$4,800.00"
-                  statusColor="border-primary"
-                />
-                <BookingCard 
-                  status="Completed"
-                  refId="#BK-7643"
-                  title="Alpine Retreat Lodge"
-                  location="Aspen, Colorado"
-                  checkIn="Jan 05, 2023"
-                  checkOut="Jan 12, 2023"
-                  price="$3,100.00"
-                  rating="5.0"
-                  statusColor="border-muted-foreground"
-                />
-              </div>
+              {userBookings.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {userBookings.map(booking => (
+                    <BookingCard 
+                      key={booking.id}
+                      status={booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      refId={booking.id}
+                      title={booking.listing.title}
+                      location={booking.listing.location}
+                      checkIn={new Date(booking.dates.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      checkOut={new Date(booking.dates.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      price={formatCurrency(booking.pricing.total)}
+                      statusColor={
+                        booking.status === 'confirmed' ? 'border-tertiary' :
+                        booking.status === 'pending' ? 'border-primary' :
+                        'border-muted-foreground'
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Icon icon="lucide:calendar-x" className="text-4xl text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2">No Bookings Found</h3>
+                  <p className="text-muted-foreground">This user hasn't made any bookings yet.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -271,65 +305,53 @@ export default function GuestProfileOverview() {
                 <button className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">Download All Receipts</button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[600px]">
-                  <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-widest font-black">
-                    <tr>
-                      <th className="px-6 py-4">Transaction ID</th>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4">Booking Ref</th>
-                      <th className="px-6 py-4">Method</th>
-                      <th className="px-6 py-4">Amount</th>
-                      <th className="px-6 py-4 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    <tr className="hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 text-xs font-bold">TXN-0092144</td>
-                      <td className="px-6 py-4 text-xs font-medium text-muted-foreground">Nov 12, 2023</td>
-                      <td className="px-6 py-4 text-xs font-bold text-primary">#BK-8821</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Icon icon="lucide:credit-card" className="text-muted-foreground" />
-                          <span className="text-xs font-medium">Visa</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold">$2,450.00</td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="px-2 py-0.5 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-full uppercase">Paid</span>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 text-xs font-bold">TXN-0091022</td>
-                      <td className="px-6 py-4 text-xs font-medium text-muted-foreground">Oct 24, 2023</td>
-                      <td className="px-6 py-4 text-xs font-bold text-primary">#BK-9012</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Icon icon="lucide:credit-card" className="text-muted-foreground" />
-                          <span className="text-xs font-medium">Visa</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold">$4,800.00</td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase">Scheduled</span>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 text-xs font-bold">TXN-0087654</td>
-                      <td className="px-6 py-4 text-xs font-medium text-muted-foreground">Oct 15, 2023</td>
-                      <td className="px-6 py-4 text-xs font-bold text-primary">#BK-7643</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Icon icon="lucide:credit-card" className="text-muted-foreground" />
-                          <span className="text-xs font-medium">Mastercard</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold">$3,100.00</td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="px-2 py-0.5 bg-tertiary/10 text-tertiary text-[10px] font-black rounded-full uppercase">Paid</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {financialData && financialData.transactions && financialData.transactions.length > 0 ? (
+                  <table className="w-full text-left min-w-[600px]">
+                    <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase tracking-widest font-black">
+                      <tr>
+                        <th className="px-6 py-4">Transaction ID</th>
+                        <th className="px-6 py-4">Date</th>
+                        <th className="px-6 py-4">Description</th>
+                        <th className="px-6 py-4">Method</th>
+                        <th className="px-6 py-4">Amount</th>
+                        <th className="px-6 py-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {financialData.transactions.slice(0, 10).map(transaction => (
+                        <tr key={transaction.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-6 py-4 text-xs font-bold">{transaction.id}</td>
+                          <td className="px-6 py-4 text-xs font-medium text-muted-foreground">
+                            {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 text-xs font-medium">{transaction.description}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <Icon icon="lucide:credit-card" className="text-muted-foreground" />
+                              <span className="text-xs font-medium">{transaction.method || 'Card'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-bold">{formatCurrency(transaction.amount)}</td>
+                          <td className="px-6 py-4 text-right">
+                            <span className={`px-2 py-0.5 text-[10px] font-black rounded-full uppercase ${
+                              transaction.status === 'completed' ? 'bg-tertiary/10 text-tertiary' :
+                              transaction.status === 'pending' ? 'bg-primary/10 text-primary' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {transaction.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-12">
+                    <Icon icon="lucide:receipt" className="text-4xl text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-bold mb-2">No Billing History</h3>
+                    <p className="text-muted-foreground">No billing transactions found for this user.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -341,49 +363,10 @@ export default function GuestProfileOverview() {
                   <h3 className="text-lg font-heading font-bold">Guest Reviews</h3>
                   <p className="text-sm text-muted-foreground">Reviews left by {user.profile.firstName} for properties</p>
                 </div>
-                <div className="divide-y divide-border">
-                  <div className="p-6 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" className="w-10 h-10 rounded-full border border-border" alt="Host" />
-                        <div>
-                          <h4 className="text-sm font-bold">Michael Chen</h4>
-                          <p className="text-xs text-muted-foreground">Skyline Penthouse Suite</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-tertiary mb-1">
-                          <Icon icon="lucide:star" className="text-sm" />
-                          <span className="text-sm font-bold">5.0</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Nov 20, 2023</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      "Amazing stay! The penthouse was exactly as described and the view was breathtaking. Michael was an excellent host and very responsive. Would definitely book again!"
-                    </p>
-                  </div>
-                  <div className="p-6 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/women/32.jpg" className="w-10 h-10 rounded-full border border-border" alt="Host" />
-                        <div>
-                          <h4 className="text-sm font-bold">Sarah Johnson</h4>
-                          <p className="text-xs text-muted-foreground">Alpine Retreat Lodge</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-tertiary mb-1">
-                          <Icon icon="lucide:star" className="text-sm" />
-                          <span className="text-sm font-bold">4.8</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Jan 15, 2023</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      "Beautiful mountain lodge with amazing amenities. The location was perfect for our ski trip. Sarah was very helpful with local recommendations. Only minor issue was the WiFi could be faster."
-                    </p>
-                  </div>
+                <div className="text-center py-12">
+                  <Icon icon="lucide:star-off" className="text-4xl text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2">No Reviews Yet</h3>
+                  <p className="text-muted-foreground">{user.profile.firstName} hasn't left any property reviews yet.</p>
                 </div>
               </div>
               
@@ -392,49 +375,10 @@ export default function GuestProfileOverview() {
                   <h3 className="text-lg font-heading font-bold">Host Reviews</h3>
                   <p className="text-sm text-muted-foreground">Reviews received from hosts</p>
                 </div>
-                <div className="divide-y divide-border">
-                  <div className="p-6 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" className="w-10 h-10 rounded-full border border-border" alt="Host" />
-                        <div>
-                          <h4 className="text-sm font-bold">Michael Chen</h4>
-                          <p className="text-xs text-muted-foreground">Host of Skyline Penthouse</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-tertiary mb-1">
-                          <Icon icon="lucide:star" className="text-sm" />
-                          <span className="text-sm font-bold">5.0</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Nov 19, 2023</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      "Arlene was the perfect guest! Communication was excellent, she respected the house rules, and left the place spotless. Would welcome her back anytime!"
-                    </p>
-                  </div>
-                  <div className="p-6 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <img src="https://randomuser.me/api/portraits/women/32.jpg" className="w-10 h-10 rounded-full border border-border" alt="Host" />
-                        <div>
-                          <h4 className="text-sm font-bold">Sarah Johnson</h4>
-                          <p className="text-xs text-muted-foreground">Host of Alpine Retreat</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-tertiary mb-1">
-                          <Icon icon="lucide:star" className="text-sm" />
-                          <span className="text-sm font-bold">4.9</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Jan 14, 2023</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      "Great guest! Very clean and respectful. Followed all house rules perfectly. The booking process was smooth and communication was clear throughout. Highly recommend!"
-                    </p>
-                  </div>
+                <div className="text-center py-12">
+                  <Icon icon="lucide:message-square-off" className="text-4xl text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2">No Host Reviews</h3>
+                  <p className="text-muted-foreground">No host reviews available for {user.profile.firstName}.</p>
                 </div>
               </div>
             </div>
