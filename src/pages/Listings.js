@@ -76,7 +76,6 @@ export default function Listings() {
   const [locationFilter, setLocationFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
   // Filter listings based on search query
@@ -166,9 +165,12 @@ export default function Listings() {
 
   const handleDateClick = (day) => {
     setSelectedDate(day);
-    setShowBookingModal(true);
+    // Navigate to create booking page with pre-filled data
+    const bookingUrl = `/bookings/create?propertyId=${selectedListing?.id}&checkIn=${day.date.toISOString().split('T')[0]}`;
+    window.location.href = bookingUrl;
   };
 
+  
   const generateCalendarDays = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -418,10 +420,8 @@ export default function Listings() {
                       return (
                         <div 
                           key={index}
-                          className={`border-r border-b border-border p-3 flex flex-col justify-between relative ${
-                            !dayInfo.isCurrentMonth ? 'bg-muted/5' : ''
-                          } ${
-                            isBooked ? 'bg-primary/5' : ''
+                          className={`relative flex flex-col items-center justify-center p-2 border border-border/20 ${
+                            dayInfo.isCurrentMonth ? 'hover:bg-muted/20' : ''
                           } ${
                             !isBooked && dayInfo.isCurrentMonth ? 'group cursor-pointer hover:bg-muted/30' : ''
                           }`}
@@ -435,7 +435,7 @@ export default function Listings() {
                           
                           {(bookingDisplayInfo && bookingDisplayInfo.show) && (
                             <div 
-                              className="absolute top-1/2 left-0 h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
+                              className="absolute bottom-1 left-0 h-12 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
                               style={{ width: bookingDisplayInfo.width }}
                             >
                               <img src={currentBookingEvent.avatar} className="w-8 h-8 rounded-full border border-border" alt="Guest" />
@@ -453,7 +453,7 @@ export default function Listings() {
                           
                           {bookingContinuation && (
                             <div 
-                              className="absolute top-1/2 left-0 h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
+                              className="absolute bottom-1 left-0 h-12 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
                               style={{ width: bookingContinuation.width }}
                             >
                               <div className="overflow-hidden flex-1">
@@ -473,7 +473,12 @@ export default function Listings() {
                               <span className="text-[10px] font-black text-tertiary">
                                 {formatCurrency(getPriceForDate(dayInfo.date, selectedListing))}
                               </span>
-                              <Icon icon="lucide:plus" className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <Link 
+                                to="/bookings/create"
+                                className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary"
+                              >
+                                <Icon icon="lucide:plus" />
+                              </Link>
                             </>
                           )}
                         </div>
@@ -485,108 +490,7 @@ export default function Listings() {
             </div>
           )}
 
-          {/* Booking Modal */}
-          {showBookingModal && selectedDate && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold">Add New Booking</h3>
-                  <button 
-                    onClick={() => setShowBookingModal(false)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <Icon icon="lucide:x" className="text-xl" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Listing Info */}
-                  <div className="p-4 bg-muted/50 rounded-xl">
-                    <div className="flex items-center gap-3 mb-2">
-                      <img 
-                        src={selectedListing?.images?.[0] || ''} 
-                        alt={selectedListing?.title || ''} 
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                      <div>
-                        <p className="font-bold text-sm">{selectedListing?.title || ''}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedListing?.location?.city}, {selectedListing?.location?.state}
-                        </p>
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Start Date */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Start Date</label>
-                    <input 
-                      type="date" 
-                      value={selectedDate.date.toISOString().split('T')[0]}
-                      onChange={(e) => setSelectedDate(prev => ({ ...prev, date: new Date(e.target.value) }))}
-                      className="w-full px-3 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary transition-all outline-none"
-                      readOnly
-                    />
-                  </div>
-
-                  {/* End Date */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">End Date</label>
-                    <input 
-                      type="date" 
-                      min={selectedDate.date.toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary transition-all outline-none"
-                    />
-                  </div>
-
-                  {/* Guest Info */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Guest Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="Enter guest name"
-                      className="w-full px-3 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary transition-all outline-none"
-                    />
-                  </div>
-
-                  {/* Guest Email */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Guest Email</label>
-                    <input 
-                      type="email" 
-                      placeholder="guest@example.com"
-                      className="w-full px-3 py-2 bg-muted border border-transparent rounded-xl text-sm focus:bg-card focus:border-primary transition-all outline-none"
-                    />
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4">
-                    <button 
-                      onClick={() => setShowBookingModal(false)}
-                      className="flex-1 py-2.5 bg-muted text-foreground rounded-xl font-bold text-sm hover:bg-muted/80 transition-all active:scale-95"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={() => {
-                        // Handle booking creation logic here
-                        console.log('Creating booking for:', {
-                          listing: selectedListing?.title,
-                          date: selectedDate.date,
-                          // Add other form data
-                        });
-                        setShowBookingModal(false);
-                      }}
-                      className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:opacity-90 transition-all active:scale-95"
-                    >
-                      Create Booking
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </>
     </PageLayout>
   );

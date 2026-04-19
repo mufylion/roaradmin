@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 import { useFormatCurrency } from '../config/useAppConfig';
 import { mockUsers } from '../data/mockUsers.js';
+import { mockListings } from '../data/mockListings.js';
 
 export default function CreateBooking() {
   const formatCurrency = useFormatCurrency();
@@ -67,6 +68,25 @@ export default function CreateBooking() {
       }
     }
   }, [id]);
+
+  // Handle URL query parameters for pre-filled data
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get('propertyId');
+    const checkIn = urlParams.get('checkIn');
+    
+    if (propertyId) {
+      setSelectedProperty(propertyId);
+    }
+    
+    if (checkIn) {
+      setCheckInDate(checkIn);
+      // Auto-set checkout date to next day
+      const checkInDateObj = new Date(checkIn);
+      checkInDateObj.setDate(checkInDateObj.getDate() + 1);
+      setCheckOutDate(checkInDateObj.toISOString().split('T')[0]);
+    }
+  }, []);
 
   // User search functionality
   useEffect(() => {
@@ -353,10 +373,11 @@ export default function CreateBooking() {
                   onChange={(e) => setSelectedProperty(e.target.value)}
                 >
                   <option value="">Select a property...</option>
-                  <option value="ocean-breeze">Ocean Breeze Villa - Malibu, CA</option>
-                  <option value="mountain-retreat">Mountain Retreat - Aspen, CO</option>
-                  <option value="urban-loft">Urban Loft - New York, NY</option>
-                  <option value="lakeside-cabin">Lakeside Cabin - Tahoe, NV</option>
+                  {mockListings.map(listing => (
+                    <option key={listing.id} value={listing.id}>
+                      {listing.title} - {listing.location.city}, {listing.location.state}
+                    </option>
+                  ))}
                 </SelectField>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
