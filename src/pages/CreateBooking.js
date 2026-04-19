@@ -243,6 +243,10 @@ export default function CreateBooking() {
       const isBooked = isDateBooked(dateString);
       let isSelected = false;
       
+      // Check if this day is invalid for checkout (before or on check-in date)
+      const isInvalidCheckout = type === 'checkout' && checkInDate && 
+        new Date(dateString) <= new Date(checkInDate);
+      
       if (type === 'checkin') {
         isSelected = checkInDate === dateString;
       } else if (type === 'checkout') {
@@ -255,22 +259,33 @@ export default function CreateBooking() {
         <div
           key={`${type}-${day}`}
           className={`
-            p-2 rounded-lg text-sm font-medium cursor-pointer transition-colors
+            p-2 rounded-lg text-sm font-medium transition-colors
             ${isBooked ? 'bg-destructive text-destructive-foreground' : 
+              isInvalidCheckout ? 'bg-muted/30 text-muted-foreground cursor-not-allowed' :
               isSelected ? 'bg-primary text-primary-foreground' : 
-                'hover:bg-muted text-foreground'}
+                'hover:bg-muted text-foreground cursor-pointer'}
           `}
           onClick={() => {
-            if (!isBooked) {
+            if (!isBooked && !isInvalidCheckout) {
               if (type === 'checkin') {
                 setCheckInDate(dateString);
+                // Clear checkout date if it's before or on the new check-in date
+                if (checkOutDate && new Date(checkOutDate) <= new Date(dateString)) {
+                  setCheckOutDate('');
+                }
               } else if (type === 'checkout') {
-                setCheckOutDate(dateString);
+                // Validate checkout date is after check-in date
+                if (checkInDate && new Date(dateString) > new Date(checkInDate)) {
+                  setCheckOutDate(dateString);
+                }
               } else {
                 if (!checkInDate) {
                   setCheckInDate(dateString);
                 } else if (!checkOutDate) {
-                  setCheckOutDate(dateString);
+                  // Validate checkout date is after check-in date
+                  if (new Date(dateString) > new Date(checkInDate)) {
+                    setCheckOutDate(dateString);
+                  }
                 }
               }
             }
@@ -457,12 +472,23 @@ export default function CreateBooking() {
                       </div>
                       
                       <div className="mt-2 p-2 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 text-xs">
+                        <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
                           <div className="w-3 h-3 bg-destructive rounded-full"></div>
                           <span className="text-muted-foreground">Booked</span>
                           <div className="w-3 h-3 bg-primary rounded-full"></div>
                           <span className="text-muted-foreground">Selected</span>
+                          {checkInDate && (
+                            <>
+                              <div className="w-3 h-3 bg-muted/30 rounded-full border border-border"></div>
+                              <span className="text-muted-foreground">Unavailable</span>
+                            </>
+                          )}
                         </div>
+                        {checkInDate && (
+                          <p className="text-xs text-muted-foreground text-center mt-1">
+                            Checkout must be after check-in date ({new Date(checkInDate).toLocaleDateString()})
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -443,6 +443,258 @@ export const mockBookings = [
     specialRequests: 'Family vacation with dog',
     createdAt: '2024-08-05',
     updatedAt: '2024-08-16'
+  },
+  {
+    id: 'BK-9031',
+    guest: {
+      id: 'user-008',
+      ...getUserDisplayData('user-008')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2026-04-22',
+      checkOut: '2026-04-25'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 2700,
+      total: 38700
+    },
+    guests: {
+      adults: 2,
+      children: 0,
+      infants: 0,
+      pets: 0,
+      total: 2
+    },
+    status: 'confirmed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'direct',
+    specialRequests: 'Late arrival expected',
+    createdAt: '2026-04-15',
+    updatedAt: '2026-04-16'
+  },
+  {
+    id: 'BK-9032',
+    guest: {
+      id: 'user-009',
+      ...getUserDisplayData('user-009')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2026-04-28',
+      checkOut: '2026-05-02'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 3600,
+      total: 53600
+    },
+    guests: {
+      adults: 1,
+      children: 0,
+      infants: 0,
+      pets: 0,
+      total: 1
+    },
+    status: 'pending',
+    paymentStatus: 'pending',
+    paymentMethod: 'credit_card',
+    source: 'airbnb',
+    specialRequests: 'Early check-in requested',
+    createdAt: '2026-04-18',
+    updatedAt: '2026-04-18'
+  },
+  {
+    id: 'BK-9033',
+    guest: {
+      id: 'user-010',
+      ...getUserDisplayData('user-010')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2026-05-10',
+      checkOut: '2026-05-15'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 4500,
+      total: 66500
+    },
+    guests: {
+      adults: 3,
+      children: 1,
+      infants: 0,
+      pets: 0,
+      total: 4
+    },
+    status: 'confirmed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'direct',
+    specialRequests: 'Extra bed needed',
+    createdAt: '2026-04-20',
+    updatedAt: '2026-04-20'
+  },
+  {
+    id: 'BK-9034',
+    guest: {
+      id: 'user-011',
+      ...getUserDisplayData('user-011')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2026-05-20',
+      checkOut: '2026-05-23'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 3240,
+      total: 44240
+    },
+    guests: {
+      adults: 2,
+      children: 0,
+      infants: 0,
+      pets: 1,
+      total: 3
+    },
+    status: 'confirmed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'booking.com',
+    specialRequests: 'Pet-friendly room required',
+    createdAt: '2026-04-19',
+    updatedAt: '2026-04-19'
+  },
+  {
+    id: 'BK-9035',
+    guest: {
+      id: 'user-012',
+      ...getUserDisplayData('user-012')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2025-12-15',
+      checkOut: '2025-12-20'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 5400,
+      total: 63400
+    },
+    guests: {
+      adults: 2,
+      children: 2,
+      infants: 0,
+      pets: 0,
+      total: 4
+    },
+    status: 'completed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'direct',
+    specialRequests: 'Holiday booking - family vacation',
+    createdAt: '2025-11-20',
+    updatedAt: '2025-12-21'
+  },
+  {
+    id: 'BK-9036',
+    guest: {
+      id: 'user-013',
+      ...getUserDisplayData('user-013')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2025-12-23',
+      checkOut: '2025-12-28'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 5400,
+      total: 63400
+    },
+    guests: {
+      adults: 1,
+      children: 0,
+      infants: 0,
+      pets: 0,
+      total: 1
+    },
+    status: 'completed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'airbnb',
+    specialRequests: 'Christmas stay',
+    createdAt: '2025-12-01',
+    updatedAt: '2025-12-29'
+  },
+  {
+    id: 'BK-9037',
+    guest: {
+      id: 'user-014',
+      ...getUserDisplayData('user-014')
+    },
+    listing: {
+      id: 'SN-98234',
+      title: 'Modern Downtown Loft',
+      location: 'Manhattan, New York'
+    },
+    dates: {
+      checkIn: '2025-12-30',
+      checkOut: '2026-01-02'
+    },
+    pricing: {
+      nightly: 12000,
+      cautionFee: 25000,
+      vat: 3240,
+      total: 44240
+    },
+    guests: {
+      adults: 2,
+      children: 0,
+      infants: 0,
+      pets: 0,
+      total: 2
+    },
+    status: 'completed',
+    paymentStatus: 'paid',
+    paymentMethod: 'credit_card',
+    source: 'direct',
+    specialRequests: 'New Year celebration',
+    createdAt: '2025-12-15',
+    updatedAt: '2026-01-03'
   }
 ];
 
