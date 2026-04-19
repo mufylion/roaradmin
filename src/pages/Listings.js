@@ -293,7 +293,81 @@ export default function Listings() {
                   <div className="grid grid-cols-7 grid-rows-5 h-[600px]">
                     {generateCalendarDays().map((dayInfo, index) => {
                       const isBooked = [6, 7, 8, 17, 18, 19, 20, 26, 27].includes(dayInfo.day) && dayInfo.isCurrentMonth;
-                      const hasBookingEvent = [6, 17, 26].includes(dayInfo.day) && dayInfo.isCurrentMonth;
+                      
+                      // Check if this day is part of any booking
+                      const bookingEvents = [
+                        { startDay: 6, duration: 3, name: 'Siri Jakobsson', nights: '3 Nights', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
+                        { startDay: 17, duration: 4, name: 'Slavcho Karbashewski', nights: '4 Nights', avatar: 'https://randomuser.me/api/portraits/men/52.jpg' },
+                        { startDay: 26, duration: 2, name: 'Regina Pollastro', nights: '2 Nights', avatar: 'https://randomuser.me/api/portraits/women/65.jpg' }
+                      ];
+                      
+                      // Check if this is the start of a booking event
+                      const currentBookingEvent = bookingEvents.find(event => 
+                        dayInfo.day === event.startDay && dayInfo.isCurrentMonth
+                      );
+                      
+                      // Check if this day is a continuation of a multi-week booking
+                      const getBookingContinuation = (dayIndex) => {
+                        const dayOfWeek = dayIndex % 7;
+                        
+                        for (const event of bookingEvents) {
+                          const startDayIndex = generateCalendarDays().findIndex(day => 
+                            day.day === event.startDay && day.isCurrentMonth
+                          );
+                          
+                          if (startDayIndex !== -1) {
+                            const startDayOfWeek = startDayIndex % 7;
+                            const remainingDaysInFirstWeek = 7 - startDayOfWeek;
+                            
+                            // Check if this day is in the continuation period
+                            if (dayIndex > startDayIndex && dayIndex < startDayIndex + event.duration) {
+                              const currentDayOfBooking = dayIndex - startDayIndex;
+                              
+                              // Check if we're in a new week
+                              if (currentDayOfBooking >= remainingDaysInFirstWeek) {
+                                const daysIntoSecondWeek = currentDayOfBooking - remainingDaysInFirstWeek;
+                                const remainingDaysInSecondWeek = Math.min(event.duration - currentDayOfBooking, 7);
+                                
+                                if (daysIntoSecondWeek < remainingDaysInSecondWeek) {
+                                  return {
+                                    event,
+                                    isContinuation: true,
+                                    width: `${remainingDaysInSecondWeek * 100}%`,
+                                    isLastSegment: currentDayOfBooking + remainingDaysInSecondWeek >= event.duration
+                                  };
+                                }
+                              }
+                            }
+                          }
+                        }
+                        return null;
+                      };
+                      
+                      const bookingContinuation = getBookingContinuation(index);
+                      
+                      // Calculate if booking spans multiple weeks and handle display accordingly
+                      const getBookingDisplayInfo = (event, dayIndex) => {
+                        const dayOfWeek = dayIndex % 7;
+                        const remainingDaysInWeek = 7 - dayOfWeek;
+                        const eventDuration = event.duration;
+                        
+                        if (eventDuration <= remainingDaysInWeek) {
+                          // Booking fits within current week
+                          return {
+                            width: `${eventDuration * 100}%`,
+                            show: true
+                          };
+                        } else {
+                          // Booking spans multiple weeks, only show first week portion
+                          return {
+                            width: `${remainingDaysInWeek * 100}%`,
+                            show: true,
+                            isMultiWeek: true
+                          };
+                        }
+                      };
+                      
+                      const bookingDisplayInfo = currentBookingEvent ? getBookingDisplayInfo(currentBookingEvent, index) : null;
                       
                       return (
                         <div 
@@ -313,45 +387,39 @@ export default function Listings() {
                             {dayInfo.day}
                           </span>
                           
-                          {hasBookingEvent && (
-                            <>
-                              {dayInfo.day === 6 && (
-                                <div className="absolute top-1/2 left-0 w-[200%] h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10">
-                                  <img src="https://randomuser.me/api/portraits/women/44.jpg" className="w-8 h-8 rounded-full border border-border" alt="Guest" />
-                                  <div className="overflow-hidden">
-                                    <p className="text-[10px] font-black truncate">Siri Jakobsson</p>
-                                    <p className="text-[8px] text-muted-foreground tracking-widest uppercase">3 Nights</p>
-                                  </div>
-                                  <div className="ml-auto flex gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
-                                  </div>
-                                </div>
-                              )}
-                              {dayInfo.day === 17 && (
-                                <div className="absolute top-1/2 left-0 w-[300%] h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10">
-                                  <img src="https://randomuser.me/api/portraits/men/52.jpg" className="w-8 h-8 rounded-full border border-border" alt="Guest" />
-                                  <div className="overflow-hidden">
-                                    <p className="text-[10px] font-black truncate">Slavcho Karbashewski</p>
-                                    <p className="text-[8px] text-muted-foreground tracking-widest uppercase">4 Nights</p>
-                                  </div>
-                                  <div className="ml-auto flex gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
-                                  </div>
-                                </div>
-                              )}
-                              {dayInfo.day === 26 && (
-                                <div className="absolute top-1/2 left-0 w-[200%] h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10">
-                                  <img src="https://randomuser.me/api/portraits/women/65.jpg" className="w-8 h-8 rounded-full border border-border" alt="Guest" />
-                                  <div className="overflow-hidden">
-                                    <p className="text-[10px] font-black truncate">Regina Pollastro</p>
-                                    <p className="text-[8px] text-muted-foreground tracking-widest uppercase">2 Nights</p>
-                                  </div>
-                                  <div className="ml-auto flex gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
-                                  </div>
-                                </div>
-                              )}
-                            </>
+                          {(bookingDisplayInfo && bookingDisplayInfo.show) && (
+                            <div 
+                              className="absolute top-1/2 left-0 h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
+                              style={{ width: bookingDisplayInfo.width }}
+                            >
+                              <img src={currentBookingEvent.avatar} className="w-8 h-8 rounded-full border border-border" alt="Guest" />
+                              <div className="overflow-hidden">
+                                <p className="text-[10px] font-black truncate">{currentBookingEvent.name}</p>
+                                <p className="text-[8px] text-muted-foreground tracking-widest uppercase">
+                                  {bookingDisplayInfo.isMultiWeek ? `${currentBookingEvent.nights} →` : currentBookingEvent.nights}
+                                </p>
+                              </div>
+                              <div className="ml-auto flex gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {bookingContinuation && (
+                            <div 
+                              className="absolute top-1/2 left-0 h-12 -translate-y-1/2 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
+                              style={{ width: bookingContinuation.width }}
+                            >
+                              <div className="overflow-hidden flex-1">
+                                <p className="text-[10px] font-black truncate">{bookingContinuation.event.name}</p>
+                                <p className="text-[8px] text-muted-foreground tracking-widest uppercase">
+                                  {bookingContinuation.isLastSegment ? bookingContinuation.event.nights : '→'}
+                                </p>
+                              </div>
+                              <div className="ml-auto flex gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
+                              </div>
+                            </div>
                           )}
                           
                           {!isBooked && dayInfo.isCurrentMonth && (
