@@ -1,13 +1,32 @@
+import { getUserById } from './mockUsers.js';
+
+// Helper function to get user display data
+const getUserDisplayData = (userId) => {
+  const user = getUserById(userId);
+  if (!user) {
+    return {
+      name: 'Unknown User',
+      avatar: 'https://randomuser.me/api/portraits/lego/0.jpg',
+      email: 'unknown@example.com',
+      phone: '+1 (555) 000-0000'
+    };
+  }
+  
+  return {
+    name: `${user.profile.firstName} ${user.profile.lastName}`,
+    avatar: user.profile.avatar,
+    email: user.contact.email,
+    phone: user.contact.phone
+  };
+};
+
 // Mock Bookings Data
 export const mockBookings = [
   {
     id: 'BK-9021',
     guest: {
       id: 'user-001',
-      name: 'Sophia Miller',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      email: 'sophia.miller@example.com',
-      phone: '+1 (555) 123-4567'
+      ...getUserDisplayData('user-001')
     },
     listing: {
       id: 'SN-98234',
@@ -49,10 +68,7 @@ export const mockBookings = [
     id: 'BK-9022',
     guest: {
       id: 'user-002',
-      name: 'James Wilson',
-      avatar: 'https://randomuser.me/api/portraits/men/86.jpg',
-      email: 'james.wilson@example.com',
-      phone: '+1 (555) 234-5678'
+      ...getUserDisplayData('user-002')
     },
     listing: {
       id: 'SN-98236',
@@ -94,10 +110,7 @@ export const mockBookings = [
     id: 'BK-9023',
     guest: {
       id: 'user-003',
-      name: 'Arlene McCoy',
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-      email: 'arlene.mccoy@example.com',
-      phone: '+1 (555) 345-6789'
+      ...getUserDisplayData('user-003')
     },
     listing: {
       id: 'SN-98234',
@@ -139,10 +152,7 @@ export const mockBookings = [
     id: 'BK-9024',
     guest: {
       id: 'user-004',
-      name: 'Cody Fisher',
-      avatar: 'https://randomuser.me/api/portraits/men/41.jpg',
-      email: 'cody.fisher@example.com',
-      phone: '+1 (555) 456-7890'
+      ...getUserDisplayData('user-004')
     },
     listing: {
       id: 'SN-98236',
@@ -186,10 +196,7 @@ export const mockBookings = [
     id: 'BK-9025',
     guest: {
       id: 'user-005',
-      name: 'Jane Cooper',
-      avatar: 'https://randomuser.me/api/portraits/women/32.jpg',
-      email: 'jane.cooper@example.com',
-      phone: '+1 (555) 567-8901'
+      ...getUserDisplayData('user-005')
     },
     listing: {
       id: 'SN-98235',
@@ -231,10 +238,7 @@ export const mockBookings = [
     id: 'BK-9026',
     guest: {
       id: 'user-006',
-      name: 'Michael Chen',
-      avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
-      email: 'michael.chen@example.com',
-      phone: '+1 (555) 678-9012'
+      ...getUserDisplayData('user-006')
     },
     listing: {
       id: 'SN-98238',
@@ -276,10 +280,7 @@ export const mockBookings = [
     id: 'BK-9027',
     guest: {
       id: 'user-007',
-      name: 'Sarah Jenkins',
-      avatar: 'https://randomuser.me/api/portraits/women/18.jpg',
-      email: 'sarah.jenkins@example.com',
-      phone: '+1 (555) 789-0123'
+      ...getUserDisplayData('user-007')
     },
     listing: {
       id: 'SN-98237',
@@ -321,10 +322,7 @@ export const mockBookings = [
     id: 'BK-9028',
     guest: {
       id: 'user-001',
-      name: 'Sophia Miller',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      email: 'sophia.miller@example.com',
-      phone: '+1 (555) 123-4567'
+      ...getUserDisplayData('user-001')
     },
     listing: {
       id: 'SN-98235',
@@ -366,10 +364,7 @@ export const mockBookings = [
     id: 'BK-9029',
     guest: {
       id: 'user-002',
-      name: 'James Wilson',
-      avatar: 'https://randomuser.me/api/portraits/men/86.jpg',
-      email: 'james.wilson@example.com',
-      phone: '+1 (555) 234-5678'
+      ...getUserDisplayData('user-002')
     },
     listing: {
       id: 'SN-98238',
@@ -411,10 +406,7 @@ export const mockBookings = [
     id: 'BK-9030',
     guest: {
       id: 'user-003',
-      name: 'Arlene McCoy',
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-      email: 'arlene.mccoy@example.com',
-      phone: '+1 (555) 345-6789'
+      ...getUserDisplayData('user-003')
     },
     listing: {
       id: 'SN-98236',

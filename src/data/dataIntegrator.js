@@ -2,6 +2,7 @@
 // This module generates financial data from bookings to ensure consistency
 
 import { mockBookings } from './mockBookings.js';
+import { getUserById } from './mockUsers.js';
 
 // Configuration
 const COMMISSION_RATE = 0.12; // 12% commission on bookings
@@ -19,11 +20,14 @@ export const generateIncomeTransactions = () => {
   const paidBookings = mockBookings.filter(b => b.paymentStatus === 'paid');
   
   paidBookings.forEach(booking => {
+    const user = getUserById(booking.guest.id);
+    const guestName = user ? `${user.profile.firstName} ${user.profile.lastName}` : 'Unknown Guest';
+    
     transactions.push({
       id: `#T-${String(transactions.length + 1).padStart(3, '0')}`,
       date: booking.createdAt,
       category: 'Income',
-      description: `Booking commission - ${booking.listing.title}`,
+      description: `Booking commission - ${guestName} - ${booking.listing.title}`,
       amount: calculateCommission(booking),
       status: 'completed',
       type: 'commission',
