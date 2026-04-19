@@ -93,6 +93,52 @@ export default function Listings() {
     setSelectedListing(fullListing || listingData);
   };
 
+  // Function to get the correct price for a specific date
+  const getPriceForDate = (date, listing) => {
+    if (!listing?.price) return 0;
+    
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    
+    // Check seasonal pricing first
+    if (listing.price.seasonal) {
+      const dateStr = date.toISOString().split('T')[0];
+      
+      for (const [season, seasonData] of Object.entries(listing.price.seasonal)) {
+        const startDate = new Date(seasonData.startDate);
+        const endDate = new Date(seasonData.endDate);
+        
+        // Handle cross-year seasonal periods properly
+        const currentYear = date.getFullYear();
+        const startWithYear = new Date(seasonData.startDate);
+        const endWithYear = new Date(seasonData.endDate);
+        
+        // Set the year for start date
+        startWithYear.setFullYear(currentYear);
+        
+        // For cross-year periods (like Dec 20 - Jan 5), end date should be in next year
+        if (endWithYear.getMonth() < startWithYear.getMonth()) {
+          endWithYear.setFullYear(currentYear + 1);
+        } else {
+          endWithYear.setFullYear(currentYear);
+        }
+        
+                
+        if (date >= startWithYear && date <= endWithYear) {
+          return seasonData.rate;
+        }
+      }
+    }
+    
+    // Use weekend pricing if applicable
+    if (isWeekend && listing.price.weekend) {
+      return listing.price.weekend;
+    }
+    
+    // Default to nightly rate
+    return listing.price.nightly || 0;
+  };
+
   // Calendar helper functions
   const getMonthName = (date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -425,7 +471,7 @@ export default function Listings() {
                           {!isBooked && dayInfo.isCurrentMonth && (
                             <>
                               <span className="text-[10px] font-black text-tertiary">
-                                {formatCurrency(selectedListing?.price?.nightly || 0)}
+                                {formatCurrency(getPriceForDate(dayInfo.date, selectedListing))}
                               </span>
                               <Icon icon="lucide:plus" className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                             </>
