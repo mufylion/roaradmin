@@ -41,12 +41,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 12000,
-      cleaningFee: 5000,
-      serviceFee: 3000,
+      cautionFee: 25000,
+      vat: 2700,
       insurance: 4500,
       subtotal: 36000,
-      taxes: 5400,
-      total: 50900,
+      taxes: 2700,
+      total: 64200,
       currency: 'NGN'
     },
     guests: {
@@ -82,13 +82,13 @@ export const mockBookings = [
       nights: 4
     },
     pricing: {
-      nightlyRate: 18000,
-      cleaningFee: 8000,
-      serviceFee: 5000,
-      insurance: 6000,
-      subtotal: 72000,
-      taxes: 10800,
-      total: 91800,
+      nightlyRate: 15000,
+      cautionFee: 25000,
+      vat: 4500,
+      insurance: 4500,
+      subtotal: 60000,
+      taxes: 4500,
+      total: 98500,
       currency: 'NGN'
     },
     guests: {
@@ -125,12 +125,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 12000,
-      cleaningFee: 5000,
-      serviceFee: 3000,
-      insurance: 3000,
+      cautionFee: 25000,
+      vat: 1800,
+      insurance: 4500,
       subtotal: 24000,
-      taxes: 3600,
-      total: 35600,
+      taxes: 1800,
+      total: 47300,
       currency: 'NGN'
     },
     guests: {
@@ -166,13 +166,13 @@ export const mockBookings = [
       nights: 2
     },
     pricing: {
-      nightlyRate: 18000,
-      cleaningFee: 8000,
-      serviceFee: 5000,
-      insurance: 3000,
-      subtotal: 36000,
-      taxes: 5400,
-      total: 57400,
+      nightlyRate: 15000,
+      cautionFee: 25000,
+      vat: 2250,
+      insurance: 4500,
+      subtotal: 30000,
+      taxes: 2250,
+      total: 59250,
       currency: 'NGN'
     },
     guests: {
@@ -211,12 +211,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 35000,
-      cleaningFee: 12000,
-      serviceFee: 8000,
-      insurance: 6000,
+      cautionFee: 25000,
+      vat: 7875,
+      insurance: 4500,
       subtotal: 105000,
-      taxes: 15750,
-      total: 147750,
+      taxes: 7875,
+      total: 142375,
       currency: 'NGN'
     },
     guests: {
@@ -253,11 +253,11 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 45000,
-      cleaningFee: 15000,
-      serviceFee: 10000,
-      insurance: 7500,
+      cautionFee: 25000,
+      vat: 11250,
+      insurance: 4500,
       subtotal: 225000,
-      taxes: 33750,
+      taxes: 11250,
       total: 291750,
       currency: 'NGN'
     },
@@ -295,12 +295,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 8500,
-      cleaningFee: 3000,
-      serviceFee: 2000,
-      insurance: 2000,
+      cautionFee: 25000,
+      vat: 1275,
+      insurance: 4500,
       subtotal: 17000,
-      taxes: 2550,
-      total: 26550,
+      taxes: 1275,
+      total: 26575,
       currency: 'NGN'
     },
     guests: {
@@ -337,12 +337,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 35000,
-      cleaningFee: 12000,
-      serviceFee: 8000,
-      insurance: 6000,
+      cautionFee: 25000,
+      vat: 13125,
+      insurance: 4500,
       subtotal: 175000,
-      taxes: 26250,
-      total: 227250,
+      taxes: 13125,
+      total: 217625,
       currency: 'NGN'
     },
     guests: {
@@ -379,12 +379,12 @@ export const mockBookings = [
     },
     pricing: {
       nightlyRate: 45000,
-      cleaningFee: 15000,
-      serviceFee: 10000,
+      cautionFee: 25000,
+      vat: 13500,
       insurance: 4500,
       subtotal: 135000,
-      taxes: 20250,
-      total: 184750,
+      taxes: 13500,
+      total: 184500,
       currency: 'NGN'
     },
     guests: {
@@ -420,13 +420,13 @@ export const mockBookings = [
       nights: 5
     },
     pricing: {
-      nightlyRate: 18000,
-      cleaningFee: 8000,
-      serviceFee: 5000,
-      insurance: 6000,
-      subtotal: 90000,
-      taxes: 13500,
-      total: 122500,
+      nightlyRate: 15000,
+      cautionFee: 25000,
+      vat: 3375,
+      insurance: 4500,
+      subtotal: 45000,
+      taxes: 3375,
+      total: 77875,
       currency: 'NGN'
     },
     guests: {

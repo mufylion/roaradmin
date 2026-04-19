@@ -5,6 +5,7 @@ import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 import { useFormatCurrency } from '../config/useAppConfig';
+import { mockUsers } from '../data/mockUsers.js';
 
 export default function CreateBooking() {
   const formatCurrency = useFormatCurrency();
@@ -19,6 +20,20 @@ export default function CreateBooking() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [checkInMonth, setCheckInMonth] = useState(new Date()); // Current month
   const [checkOutMonth, setCheckOutMonth] = useState(new Date()); // Current month
+  
+  // User search and new guest states
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [selectedGuestId, setSelectedGuestId] = useState('');
+  const [showNewGuestModal, setShowNewGuestModal] = useState(false);
+  const [newGuest, setNewGuest] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: ''
+  });
   
   const isEditMode = id && id !== 'undefined';
   const pageTitle = isEditMode ? 'Edit Booking' : 'Create New Booking';
@@ -53,6 +68,83 @@ export default function CreateBooking() {
     }
   }, [id]);
 
+  // User search functionality
+  useEffect(() => {
+    if (userSearchQuery) {
+      const filtered = mockUsers.filter(user => 
+        user.role === 'guest' && (
+          user.profile.firstName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+          user.profile.lastName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+          user.contact.email.toLowerCase().includes(userSearchQuery.toLowerCase())
+        )
+      );
+      setFilteredUsers(filtered);
+      setShowUserDropdown(true);
+    } else {
+      setFilteredUsers([]);
+      setShowUserDropdown(false);
+    }
+  }, [userSearchQuery]);
+
+  // Handle user selection
+  const handleUserSelect = (user) => {
+    setSelectedGuestId(user.id);
+    setSelectedGuest(`${user.profile.firstName} ${user.profile.lastName}`);
+    setUserSearchQuery('');
+    setShowUserDropdown(false);
+  };
+
+  // Handle new guest creation
+  const handleCreateNewGuest = () => {
+    if (newGuest.firstName && newGuest.lastName && newGuest.email) {
+      // In a real app, you would save this to the database
+      const newUser = {
+        id: `user-${Date.now()}`,
+        profile: {
+          firstName: newGuest.firstName,
+          lastName: newGuest.lastName,
+          avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'women' : 'men'}/${Math.floor(Math.random() * 50)}.jpg`,
+          location: newGuest.location || 'Unknown'
+        },
+        contact: {
+          email: newGuest.email,
+          phone: newGuest.phone || '+1 (555) 000-0000'
+        },
+        role: 'guest',
+        status: 'active',
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+        verification: {
+          email: true,
+          phone: false,
+          identity: false
+        },
+        stats: {
+          totalBookings: 0,
+          averageRating: 0,
+          responseRate: 0,
+          totalSpent: 0
+        }
+      };
+      
+      // Add to mock users (in real app, this would be an API call)
+      mockUsers.push(newUser);
+      
+      // Select the new guest
+      handleUserSelect(newUser);
+      
+      // Reset form and close modal
+      setNewGuest({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        location: ''
+      });
+      setShowNewGuestModal(false);
+    }
+  };
+
   // Sample booked dates for demonstration
   const bookedDates = [
     '2024-10-12', '2024-10-13', '2024-10-14',
@@ -65,11 +157,13 @@ export default function CreateBooking() {
     const nights = checkInDate && checkOutDate ? 
       Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0;
     const nightlyRate = 35000; // Naira
-    const cleaningFee = 12000; // Naira
-    const serviceFee = 8000; // Naira
+    const cautionFee = 25000; // Naira - Refundable caution fee
     const insurance = insuranceEnabled ? 4500 : 0; // Naira
     
-    return (nightlyRate * nights) + cleaningFee + serviceFee + insurance;
+    // VAT 7.5% on total nightly rate only
+    const vat = Math.round((nightlyRate * nights) * 0.075);
+    
+    return (nightlyRate * nights) + cautionFee + vat + insurance;
   };
 
   const isDateBooked = (dateString) => {
@@ -201,17 +295,48 @@ export default function CreateBooking() {
             {/* Guest Selection */}
             <FormSection title="Guest Information" icon="lucide:user">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <InputField 
                     label="Select Guest"
                     placeholder="Search by name or email..."
-                    value={selectedGuest}
-                    onChange={(e) => setSelectedGuest(e.target.value)}
+                    value={userSearchQuery || selectedGuest}
+                    onChange={(e) => {
+                      setUserSearchQuery(e.target.value);
+                      if (!e.target.value) {
+                        setSelectedGuest('');
+                        setSelectedGuestId('');
+                      }
+                    }}
+                    onFocus={() => setShowUserDropdown(true)}
                     icon="lucide:search"
                   />
+                  
+                  {/* User Dropdown */}
+                  {showUserDropdown && filteredUsers.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {filteredUsers.map(user => (
+                        <div
+                          key={user.id}
+                          onClick={() => handleUserSelect(user)}
+                          className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img src={user.profile.avatar} className="w-8 h-8 rounded-full" alt={user.profile.firstName} />
+                            <div className="flex-1">
+                              <p className="text-sm font-bold">{user.profile.firstName} {user.profile.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{user.contact.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-end">
-                  <button className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-sm font-bold text-muted-foreground hover:border-primary hover:text-primary transition-all">
+                  <button 
+                    onClick={() => setShowNewGuestModal(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-sm font-bold text-muted-foreground hover:border-primary hover:text-primary transition-all"
+                  >
                     <Icon icon="lucide:plus" className="text-lg" />
                     <span>Add New Guest</span>
                   </button>
@@ -399,12 +524,15 @@ export default function CreateBooking() {
                     Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cleaning Fee</span>
-                  <span className="font-bold">{formatCurrency(12000)}</span>
+                  <span className="text-muted-foreground">Refundable Caution Fee</span>
+                  <span className="font-bold">{formatCurrency(25000)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Service Fee</span>
-                  <span className="font-bold">{formatCurrency(8000)}</span>
+                  <span className="text-muted-foreground">VAT 7.5%</span>
+                  <span className="font-bold">{formatCurrency(
+                    checkInDate && checkOutDate ? 
+                    Math.round((35000 * Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))) * 0.075) : 0
+                  )}</span>
                 </div>
                 {insuranceEnabled && (
                   <div className="flex justify-between text-sm">
@@ -442,6 +570,96 @@ export default function CreateBooking() {
           </div>
         </div>
       </div>
+
+      {/* New Guest Modal */}
+      {showNewGuestModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold">Add New Guest</h2>
+              <button
+                onClick={() => setShowNewGuestModal(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <Icon icon="lucide:x" className="text-lg" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">First Name</label>
+                  <input
+                    type="text"
+                    value={newGuest.firstName}
+                    onChange={(e) => setNewGuest({...newGuest, firstName: e.target.value})}
+                    className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                    placeholder="John"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Last Name</label>
+                  <input
+                    type="text"
+                    value={newGuest.lastName}
+                    onChange={(e) => setNewGuest({...newGuest, lastName: e.target.value})}
+                    className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email Address</label>
+                <input
+                  type="email"
+                  value={newGuest.email}
+                  onChange={(e) => setNewGuest({...newGuest, email: e.target.value})}
+                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                  placeholder="john.doe@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</label>
+                <input
+                  type="tel"
+                  value={newGuest.phone}
+                  onChange={(e) => setNewGuest({...newGuest, phone: e.target.value})}
+                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Location</label>
+                <input
+                  type="text"
+                  value={newGuest.location}
+                  onChange={(e) => setNewGuest({...newGuest, location: e.target.value})}
+                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                  placeholder="New York, NY"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNewGuestModal(false)}
+                className="flex-1 py-3 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateNewGuest}
+                className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
+              >
+                Add Guest
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 }
