@@ -86,15 +86,11 @@ export default function Listings() {
     listing.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Debug log to check pricing
-  console.log('Listings - Sample pricing:', {
-    nightly: mockListings[0]?.price?.nightly,
-    formatted: formatCurrency(mockListings[0]?.price?.nightly || 0),
-    symbol: formatCurrency(12000)
-  });
 
   const handleListingClick = (listingData) => {
-    setSelectedListing(listingData);
+    // Find the full listing data to get the complete price object
+    const fullListing = mockListings.find(listing => listing.id === listingData.id);
+    setSelectedListing(fullListing || listingData);
   };
 
   // Calendar helper functions
@@ -361,7 +357,7 @@ export default function Listings() {
                           {!isBooked && dayInfo.isCurrentMonth && (
                             <>
                               <span className="text-[10px] font-black text-tertiary">
-                                {formatCurrency(selectedListing?.price?.nightly || 12000)}
+                                {formatCurrency(selectedListing?.price?.nightly || 0)}
                               </span>
                               <Icon icon="lucide:plus" className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                             </>
