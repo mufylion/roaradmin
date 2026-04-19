@@ -10,6 +10,15 @@ export default function AddNewListing() {
   const formatCurrency = useFormatCurrency();
   const [currentStep, setCurrentStep] = useState(1);
   const [status, setStatus] = useState('publish');
+  const [seasonalPricing, setSeasonalPricing] = useState([
+    {
+      id: 1,
+      name: '',
+      rate: '',
+      startDate: '',
+      endDate: ''
+    }
+  ]);
 
   const nextStep = () => {
     if (currentStep < 6) {
@@ -21,6 +30,31 @@ export default function AddNewListing() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const addSeasonalPricing = () => {
+    setSeasonalPricing([
+      ...seasonalPricing,
+      {
+        id: Date.now(),
+        name: '',
+        rate: '',
+        startDate: '',
+        endDate: ''
+      }
+    ]);
+  };
+
+  const removeSeasonalPricing = (id) => {
+    if (seasonalPricing.length > 1) {
+      setSeasonalPricing(seasonalPricing.filter(item => item.id !== id));
+    }
+  };
+
+  const updateSeasonalPricing = (id, field, value) => {
+    setSeasonalPricing(seasonalPricing.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
   };
 
   const getStepTitle = () => {
@@ -140,23 +174,74 @@ export default function AddNewListing() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-bold">Seasonal Pricing</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold">Seasonal Pricing</h3>
+                  <button
+                    onClick={addSeasonalPricing}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
+                  >
+                    <Icon icon="lucide:plus" className="text-lg" />
+                    Add Season
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {[
-                    { season: 'Summer (Jun-Aug)', rate: '180', startDate: '2024-06-01', endDate: '2024-08-31' },
-                    { season: 'Winter (Dec-Feb)', rate: '200', startDate: '2024-12-01', endDate: '2025-02-28' },
-                    { season: 'Holiday Period', rate: '250', startDate: '2024-12-20', endDate: '2025-01-05' }
-                  ].map((item, index) => (
-                    <div key={index} className="p-4 bg-muted/50 rounded-xl">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <InputField label="Season" defaultValue={item.season} readOnly />
-                        <InputField label="Rate" type="number" defaultValue={item.rate} prefix={config.currency.symbol} />
+                  {seasonalPricing.map((item, index) => (
+                    <div key={item.id} className="p-4 bg-muted/50 rounded-xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-bold text-muted-foreground">
+                          Season {index + 1}
+                        </span>
+                        {seasonalPricing.length > 1 && (
+                          <button
+                            onClick={() => removeSeasonalPricing(item.id)}
+                            className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
+                          >
+                            <Icon icon="lucide:trash-2" className="text-lg" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Date Range</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <InputField type="date" defaultValue={item.startDate} />
-                            <InputField type="date" defaultValue={item.endDate} />
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Season Name</label>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => updateSeasonalPricing(item.id, 'name', e.target.value)}
+                            placeholder="e.g., Summer Season"
+                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rate</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
+                            <input
+                              type="number"
+                              value={item.rate}
+                              onChange={(e) => updateSeasonalPricing(item.id, 'rate', e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                            />
                           </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Start Date</label>
+                          <input
+                            type="date"
+                            value={item.startDate}
+                            onChange={(e) => updateSeasonalPricing(item.id, 'startDate', e.target.value)}
+                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">End Date</label>
+                          <input
+                            type="date"
+                            value={item.endDate}
+                            onChange={(e) => updateSeasonalPricing(item.id, 'endDate', e.target.value)}
+                            min={item.startDate}
+                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                          />
                         </div>
                       </div>
                     </div>
@@ -167,8 +252,20 @@ export default function AddNewListing() {
               <div className="space-y-4">
                 <h3 className="text-lg font-bold">Additional Fees</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputField label="Cleaning Fee" type="number" defaultValue="50" prefix={config.currency.symbol} />
-                  <InputField label="Service Fee" type="number" defaultValue="8" />
+                  <InputField label="Refundable Caution Deposit" type="number" defaultValue="25000" prefix={config.currency.symbol} />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">VAT Rate</label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={config.tax.vatRate} 
+                        className="w-full pr-8 pl-4 py-3 bg-card border border-border rounded-xl text-muted-foreground cursor-not-allowed outline-none" 
+                        readOnly
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Applied to nightly rate only (Fixed rate)</p>
+                  </div>
                 </div>
               </div>
             </div>

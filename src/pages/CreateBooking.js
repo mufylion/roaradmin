@@ -4,12 +4,13 @@ import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
-import { useFormatCurrency } from '../config/useAppConfig';
+import { useFormatCurrency, useAppConfig } from '../config/useAppConfig';
 import { mockUsers } from '../data/mockUsers.js';
 import { mockListings } from '../data/mockListings.js';
 
 export default function CreateBooking() {
   const formatCurrency = useFormatCurrency();
+  const { config } = useAppConfig();
   const { id } = useParams();
   const [guestCount, setGuestCount] = useState(2);
   const [insuranceEnabled, setInsuranceEnabled] = useState(true);
@@ -176,12 +177,15 @@ export default function CreateBooking() {
   const calculateTotal = () => {
     const nights = checkInDate && checkOutDate ? 
       Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0;
-    const nightlyRate = 35000; // Naira
-    const cautionFee = 25000; // Naira - Refundable caution fee
+    
+    // Get selected listing data
+    const selectedListingData = mockListings.find(listing => listing.id === selectedProperty);
+    const nightlyRate = selectedListingData?.price?.nightly || 35000; // Default to 35000 if no listing selected
+    const cautionFee = selectedListingData?.price?.fees?.caution || 25000; // Default to 25000 if not set
     const insurance = insuranceEnabled ? 4500 : 0; // Naira
     
-    // VAT 7.5% on total nightly rate only
-    const vat = Math.round((nightlyRate * nights) * 0.075);
+    // VAT on total nightly rate only
+    const vat = Math.round((nightlyRate * nights) * (config.tax.vatRate / 100));
     
     return (nightlyRate * nights) + cautionFee + vat + insurance;
   };
@@ -541,18 +545,23 @@ export default function CreateBooking() {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Nightly Rate</span>
-                  <span className="font-bold">{formatCurrency(35000)} × {checkInDate && checkOutDate ? 
+                  <span className="font-bold">{formatCurrency(
+                    mockListings.find(listing => listing.id === selectedProperty)?.price?.nightly || 35000
+                  )} × {checkInDate && checkOutDate ? 
                     Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Refundable Caution Fee</span>
-                  <span className="font-bold">{formatCurrency(25000)}</span>
+                  <span className="font-bold">{formatCurrency(
+                    mockListings.find(listing => listing.id === selectedProperty)?.price?.fees?.caution || 25000
+                  )}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">VAT 7.5%</span>
+                  <span className="text-muted-foreground">VAT {config.tax.vatRate}%</span>
                   <span className="font-bold">{formatCurrency(
                     checkInDate && checkOutDate ? 
-                    Math.round((35000 * Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))) * 0.075) : 0
+                    Math.round(((mockListings.find(listing => listing.id === selectedProperty)?.price?.nightly || 35000) * 
+                    Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))) * (config.tax.vatRate / 100)) : 0
                   )}</span>
                 </div>
                 {insuranceEnabled && (

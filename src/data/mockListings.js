@@ -24,9 +24,7 @@ export const mockListings = [
         holiday: { rate: 25000, startDate: '2024-12-20', endDate: '2025-01-05' }
       },
       fees: {
-        cleaning: 5000,
-        service: 3000,
-        securityDeposit: 18000,
+        caution: 25000,
         weeklyDiscount: 15,
         monthlyDiscount: 20
       }
@@ -133,9 +131,7 @@ export const mockListings = [
         holiday: { rate: 70000, startDate: '2024-12-20', endDate: '2025-01-05' }
       },
       fees: {
-        cleaning: 15000,
-        service: 8000,
-        securityDeposit: 52500,
+        caution: 35000,
         weeklyDiscount: 10,
         monthlyDiscount: 15
       }

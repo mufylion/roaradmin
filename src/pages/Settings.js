@@ -23,7 +23,7 @@ const NavButton = ({ icon, label, active = false, onClick }) => (
   </button>
 );
 
-const FormField = ({ label, type = "text", value, options, onChange }) => (
+const FormField = ({ label, type = "text", value, options, onChange, readOnly = false }) => (
   <div className="space-y-2">
     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</label>
     {type === 'select' ? (
@@ -43,14 +43,19 @@ const FormField = ({ label, type = "text", value, options, onChange }) => (
         type={type}
         value={value}
         onChange={(e) => onChange && onChange(e.target.value)}
-        className="w-full px-4 py-2.5 bg-muted border-none rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
+        readOnly={readOnly}
+        className={`w-full px-4 py-2.5 border-none rounded-xl text-sm outline-none ${
+          readOnly 
+            ? 'bg-card text-muted-foreground cursor-not-allowed' 
+            : 'bg-muted focus:ring-2 focus:ring-primary'
+        }`}
       />
     )}
   </div>
 );
 
 export default function Settings() {
-  const { config, currency, timezone, updateCurrency, updateTimezone, resetToDefaults } = useAppConfig();
+  const { config, currency, timezone, tax, updateCurrency, updateTimezone, updateTax, resetToDefaults } = useAppConfig();
   const [activeTab, setActiveTab] = useState('general');
   const [autoConfirm, setAutoConfirm] = useState(false);
 
@@ -110,7 +115,7 @@ export default function Settings() {
                   </label>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField label="Platform Service Fee (%)" type="number" value={12} />
+                  <FormField label="VAT Rate (%)" type="number" value={tax.vatRate} readOnly />
                   <FormField label="Default Cancellation Window (Hours)" type="number" value={48} />
                 </div>
               </div>

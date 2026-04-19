@@ -27,6 +27,12 @@ export const DEFAULT_CONFIG = {
     timeFormat: 'h:mm a',
     dateTimeFormat: 'MMM dd, yyyy h:mm a',
     locale: 'en-NG'
+  },
+
+  // Tax Configuration
+  tax: {
+    vatRate: 7.5,
+    vatDescription: 'Applied to nightly rate only'
   }
 };
 
@@ -69,6 +75,18 @@ export function AppConfigProvider({ children }) {
     return DEFAULT_CONFIG.timezone;
   });
 
+  const [tax, setTax] = useState(() => {
+    const saved = localStorage.getItem('app_tax');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return DEFAULT_CONFIG.tax;
+      }
+    }
+    return DEFAULT_CONFIG.tax;
+  });
+
   // Save to localStorage when settings change
   useEffect(() => {
     localStorage.setItem('app_currency', JSON.stringify(currency));
@@ -78,6 +96,10 @@ export function AppConfigProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('app_timezone', JSON.stringify(timezone));
   }, [timezone]);
+
+  useEffect(() => {
+    localStorage.setItem('app_tax', JSON.stringify(tax));
+  }, [tax]);
 
   // Debug log to check currency configuration
   console.log('AppConfig - Current currency:', {
@@ -91,6 +113,7 @@ export function AppConfigProvider({ children }) {
     ...DEFAULT_CONFIG,
     currency,
     timezone,
+    tax,
     dateTime: {
       ...DEFAULT_CONFIG.dateTime,
       timezone: timezone.name,
@@ -108,18 +131,26 @@ export function AppConfigProvider({ children }) {
     setTimezone(newTimezone);
   };
 
+  // Update tax function
+  const updateTax = (newTax) => {
+    setTax(newTax);
+  };
+
   // Reset to defaults
   const resetToDefaults = () => {
     setCurrency(DEFAULT_CONFIG.currency);
     setTimezone(DEFAULT_CONFIG.timezone);
+    setTax(DEFAULT_CONFIG.tax);
   };
 
   const value = {
     config: dynamicConfig,
     currency,
     timezone,
+    tax,
     updateCurrency,
     updateTimezone,
+    updateTax,
     resetToDefaults
   };
 
