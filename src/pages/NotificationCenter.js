@@ -123,6 +123,7 @@ export default function NotificationCenter() {
     // Generate booking-related notifications
     const recentBookings = mockBookings
       .filter(b => b.status === 'confirmed' || b.status === 'pending')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 3);
     
     recentBookings.forEach((booking, index) => {
@@ -153,7 +154,8 @@ export default function NotificationCenter() {
     // Generate user-related notifications
     const recentUsers = mockUsers
       .filter(u => u.createdAt)
-      .slice(-2);
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 2);
       
     recentUsers.forEach((user, index) => {
       const userDate = new Date(user.createdAt);
