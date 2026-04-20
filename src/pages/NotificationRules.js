@@ -114,10 +114,10 @@ export default function NotificationRules() {
             label="Listing Approved" 
             defaultChecked={{ Email: true, Push: true, SMS: false }}
           />
-          <CheckboxGroup 
+          {/* <CheckboxGroup 
             label="Payout Success" 
             defaultChecked={{ Email: true, Push: true, SMS: false }}
-          />
+          /> */}
         </div>
       </div>
 

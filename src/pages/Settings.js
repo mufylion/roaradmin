@@ -72,28 +72,7 @@ export default function Settings() {
       default:
         return (
           <>
-            {/* Site Identity */}
-            <section className="bg-card rounded-2xl border border-border shadow-sm p-6">
-              <h2 className="text-lg font-heading font-bold mb-6">Site Identity</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Platform Name" value="RoarHomes" />
-                <FormField label="Support Email" type="email" value="support@roarhomes.com" />
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Platform Logo</label>
-                  <div className="flex items-center gap-6 p-4 border border-dashed border-border rounded-2xl bg-muted/30">
-                    <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-4xl">
-                      <Icon icon="lucide:home" />
-                    </div>
-                    <div className="space-y-2">
-                      <button className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:opacity-90 transition-opacity">
-                        Upload New Logo
-                      </button>
-                      <p className="text-[10px] text-muted-foreground">Recommended size: 512x512px. JPG, PNG, SVG allowed.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
+            
 
             {/* Booking Rules */}
             <section className="bg-card rounded-2xl border border-border shadow-sm p-6">

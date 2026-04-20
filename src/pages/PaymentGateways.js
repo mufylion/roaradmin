@@ -52,7 +52,7 @@ export default function PaymentGateways() {
       </div>
 
       {/* Payout Settings */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+      {/* <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
         <h2 className="text-lg font-heading font-bold mb-6">Payout Settings</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -91,7 +91,7 @@ export default function PaymentGateways() {
             </label>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Transaction Fees */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
