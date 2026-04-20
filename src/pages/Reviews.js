@@ -47,10 +47,22 @@ const ReviewCard = ({ title, content, rating, author, avatar, details }) => (
         </div>
         <h3 className="text-lg font-bold mb-2">{title}</h3>
         <p className="text-sm text-[#64748b] mb-3 leading-relaxed">{content}</p>
-        <div className="flex items-center gap-2 text-xs text-[#64748b]">
+        <div className="flex items-center gap-2 text-xs text-[#64748b] mb-4">
           <span className="font-medium">{author}</span>
           <span>•</span>
           <span>{details}</span>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] rounded-lg text-xs font-medium transition-all">
+            <Icon icon="lucide:flag" className="w-3 h-3" />
+            Flag
+          </button>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-medium transition-all">
+            <Icon icon="lucide:reply" className="w-3 h-3" />
+            Reply
+          </button>
         </div>
       </div>
     </div>
