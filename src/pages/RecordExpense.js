@@ -66,22 +66,111 @@ export default function RecordExpense() {
     return (base + base * (taxRate / 100)).toFixed(2);
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Only PNG, JPG, or PDF files are allowed');
+      return;
+    }
+
+    // Store file info (in a real app, this would upload to server)
+    const fileInfo = {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: new Date(file.lastModified).toISOString()
+    };
+
+    console.log('Receipt uploaded:', fileInfo);
+    alert(`Receipt "${file.name}" uploaded successfully! (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    
+    // Update UI to show file is uploaded
+    const uploadArea = document.querySelector('[for="receipt-upload"]');
+    if (uploadArea) {
+      uploadArea.classList.add('border-primary', 'bg-primary/5');
+      uploadArea.classList.remove('border-input', 'bg-muted/10');
+      uploadArea.innerHTML = `
+        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+          <Icon icon="lucide:check" className="text-2xl" />
+        </div>
+        <div>
+          <p class="font-bold">File uploaded: ${file.name}</p>
+          <p class="text-xs text-muted-foreground mt-1">${(file.size / 1024 / 1024).toFixed(2)}MB</p>
+        </div>
+      `;
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Recording expense:', {
-      amount,
-      expenseDate,
-      category,
-      vendor,
-      paymentMethod,
-      referenceNumber,
-      description,
-      taxRate,
-      taxDeductible,
-      approvalStatus,
-      linkedEntity
-    });
+    
+    // Create new expense object
+    const newExpense = {
+      id: `#EXP-${Date.now()}`,
+      date: expenseDate || new Date().toISOString().split('T')[0],
+      category: 'Expenses',
+      description: `${category}: ${vendor} - ${description}`,
+      amount: `-${parseFloat(amount).toFixed(2)}`,
+      status: approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)
+    };
+    
+    // Add to mockFinancials transactions (in a real app, this would be an API call)
+    if (typeof window !== 'undefined' && window.mockFinancials) {
+      window.mockFinancials.transactions.unshift(newExpense);
+      
+      // Update expense categories if needed
+      const currentCategories = window.mockFinancials.expenses.categories || [];
+      const categoryExists = currentCategories.some(cat => cat.category.toLowerCase() === category.toLowerCase());
+      
+      if (!categoryExists) {
+        window.mockFinancials.expenses.categories.push({
+          category: category.charAt(0).toUpperCase() + category.slice(1),
+          percentage: Math.round(((parseFloat(amount) / window.mockFinancials.transactions
+            .filter(t => t.category === 'Expenses')
+            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount.replace(/[^0-9.-]/g, ''))), 0)) * 100))
+        });
+      }
+      
+      // Update total expenses
+      const totalExpenses = window.mockFinancials.transactions
+        .filter(t => t.category === 'Expenses')
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount.replace(/[^0-9.-]/g, ''))), 0);
+      
+      window.mockFinancials.expenses.total = totalExpenses;
+      
+      // Show success message
+      alert(`Expense of ${window.useAppConfig ? window.useAppConfig().currency.symbol : '₦'}${parseFloat(amount).toFixed(2)} has been recorded successfully!`);
+      
+      // Reset form
+      setAmount('');
+      setExpenseDate('');
+      setCategory('');
+      setVendor('');
+      setPaymentMethod('');
+      setReferenceNumber('');
+      setDescription('');
+      setTaxRate(0);
+      setTaxDeductible(true);
+      setApprovalStatus('approved');
+      setLinkedEntity('');
+      
+      // Redirect to financials page
+      window.location.href = '/financials';
+    } else {
+      console.error('mockFinancials not available');
+      alert('Error: Unable to save expense. Please try again.');
+    }
   };
 
   return (
@@ -205,14 +294,26 @@ export default function RecordExpense() {
             {/* Receipt Upload */}
             <FormSection title="Receipt & Proof of Purchase" icon="lucide:upload">
               <div className="text-xs text-muted-foreground italic mb-4">Required for tax compliance</div>
-              <div className="border-2 border-dashed border-input rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-3 hover:border-primary transition-colors cursor-pointer bg-muted/10">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                  <Icon icon="lucide:upload" className="text-2xl" />
-                </div>
-                <div>
-                  <p className="font-bold">Click to upload receipt</p>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG or PDF (Max. 5MB)</p>
-                </div>
+              <div className="border-2 border-dashed border-input rounded-2xl p-8">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,application/pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="receipt-upload"
+                />
+                <label 
+                  htmlFor="receipt-upload"
+                  className="border-2 border-dashed border-input rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-3 hover:border-primary transition-colors cursor-pointer bg-muted/10"
+                >
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                    <Icon icon="lucide:upload" className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="font-bold">Click to upload receipt</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG or PDF (Max. 5MB)</p>
+                  </div>
+                </label>
               </div>
             </FormSection>
           </div>

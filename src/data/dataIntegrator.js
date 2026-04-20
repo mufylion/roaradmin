@@ -293,18 +293,21 @@ export const generateFinancialSummary = () => {
 export const generatePayouts = () => {
   const paidBookings = mockBookings.filter(b => b.paymentStatus === 'paid');
   const payouts = [];
+  const now = new Date();
   
-  // Generate weekly payouts for the last 5 weeks
-  for (let i = 0; i < 5; i++) {
+  // Generate weekly payouts for the last 4 weeks (processed)
+  for (let i = 1; i <= 4; i++) {
     const date = new Date();
     date.setDate(date.getDate() - (i * 7));
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() - date.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
     
     const weekBookings = paidBookings.filter(booking => {
       const bookingDate = new Date(booking.createdAt);
-      const weekStart = new Date(date);
-      weekStart.setDate(weekStart.getDate() - 7);
-      const weekEnd = new Date(date);
-      
       return bookingDate >= weekStart && bookingDate <= weekEnd;
     });
     
@@ -314,7 +317,7 @@ export const generatePayouts = () => {
     
     if (totalPayout > 0) {
       payouts.push({
-        id: `#P-${String(i + 1).padStart(3, '0')}`,
+        id: `#P-${String(i).padStart(3, '0')}`,
         date: date.toISOString().split('T')[0],
         amount: totalPayout,
         status: 'processed',
@@ -325,5 +328,35 @@ export const generatePayouts = () => {
     }
   }
   
-  return payouts;
+  // Generate pending payouts for current week
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - now.getDay());
+  currentWeekStart.setHours(0, 0, 0, 0);
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+  currentWeekEnd.setHours(23, 59, 59, 999);
+  
+  const currentWeekBookings = paidBookings.filter(booking => {
+    const bookingDate = new Date(booking.createdAt);
+    return bookingDate >= currentWeekStart && bookingDate <= currentWeekEnd;
+  });
+  
+  const currentWeekPayout = currentWeekBookings.reduce((sum, booking) => {
+    return sum + Math.round(booking.pricing.total * 0.85); // 85% to host after commission
+  }, 0);
+  
+  if (currentWeekPayout > 0) {
+    payouts.push({
+      id: `#P-005`,
+      date: currentWeekEnd.toISOString().split('T')[0],
+      amount: currentWeekPayout,
+      status: 'pending',
+      method: 'bank_transfer',
+      recipients: new Set(currentWeekBookings.map(b => b.guest.id)).size,
+      description: 'Weekly host payouts (pending)'
+    });
+  }
+  
+  // Sort by date (newest first)
+  return payouts.sort((a, b) => new Date(b.date) - new Date(a.date));
 };

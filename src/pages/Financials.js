@@ -159,6 +159,7 @@ export default function Financials() {
   // Use reusable time-based data hook
   const timeBasedData = useTimeBasedData(timePeriod, mockBookings);
 
+  
   // Use mock transactions data with time period filtering
   const transactions = useMemo(() => {
     let allTransactions = mockFinancials.transactions;
@@ -234,12 +235,62 @@ export default function Financials() {
     },
   };
 
+  // Calculate dynamic expense categories from time-filtered transactions
+  const expenseCategories = useMemo(() => {
+    const expenseTransactions = transactions.filter(t => t.category === 'Expenses');
+    const categories = {};
+    
+    // Default categories that should always be shown
+    const defaultCategories = {
+      'Platform Fees': 0,
+      'Maintenance': 0,
+      'Marketing': 0,
+      'Utilities': 0,
+      'Staff Costs': 0,
+      'Other': 0
+    };
+    
+    // Group expenses by sub-category
+    expenseTransactions.forEach(transaction => {
+      // Extract category from description (e.g., "Platform subscription fee" -> "Platform Fees")
+      let category = 'Other';
+      if (transaction.description.includes('subscription')) {
+        category = 'Platform Fees';
+      } else if (transaction.description.includes('maintenance')) {
+        category = 'Maintenance';
+      } else if (transaction.description.includes('marketing') || transaction.description.includes('advertising')) {
+        category = 'Marketing';
+      } else if (transaction.description.includes('utilities') || transaction.description.includes('electricity') || transaction.description.includes('water')) {
+        category = 'Utilities';
+      } else if (transaction.description.includes('staff') || transaction.description.includes('salary')) {
+        category = 'Staff Costs';
+      }
+      
+      if (!categories[category]) {
+        categories[category] = 0;
+      }
+      categories[category] += parseFloat(transaction.amount.replace(/[^0-9.-]/g, ''));
+    });
+    
+    // Merge with default categories to ensure all categories are shown
+    const mergedCategories = { ...defaultCategories, ...categories };
+    
+    // Convert to percentages
+    const total = Object.values(mergedCategories).reduce((sum, amount) => sum + amount, 0);
+    
+    return Object.entries(mergedCategories).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: total > 0 ? Math.round((amount / total) * 100) : 0
+    })).sort((a, b) => b.amount - a.amount);
+  }, [transactions]);
+
   const doughnutData = {
-    labels: mockFinancials.expenses.categories.map(item => item.category),
+    labels: expenseCategories.map(item => item.category),
     datasets: [
       {
-        data: mockFinancials.expenses.categories.map(item => item.percentage),
-        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444'],
+        data: expenseCategories.map(item => item.percentage || 0.1), // Ensure minimum value for rendering
+        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
         borderWidth: 0,
       },
     ],
@@ -256,7 +307,24 @@ export default function Financials() {
         position: 'right',
         labels: { boxWidth: 10, font: { size: 10 } },
       },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const value = expenseCategories[context.dataIndex];
+            if (value.amount > 0) {
+              return `${value.category}: ${formatCurrency(value.amount)} (${value.percentage}%)`;
+            } else {
+              return `${value.category}: ${formatCurrency(0)} (0%)`;
+            }
+          }
+        }
+      }
     },
+    elements: {
+      arc: {
+        borderWidth: 0
+      }
+    }
   };
 
   return (
@@ -310,13 +378,6 @@ export default function Financials() {
             value={formatCurrency(timeBasedData.netProfit)}
             trend={timeBasedData.netProfit > 0 ? `+${timeBasedData.monthlyGrowth}% vs last month` : "No profit this period"} 
             trendType={timeBasedData.netProfit > 0 ? "up" : "neutral"} 
-          />
-          <StatCard 
-            title="Pending Payouts" 
-            value={formatCurrency(mockFinancials.payouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0) || 1820000)}
-            trend={`${mockFinancials.payouts.length} pending transfers`} 
-            trendType="neutral" 
-            icon="lucide:clock" 
           />
         </div>
 

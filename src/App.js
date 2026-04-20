@@ -18,6 +18,7 @@ import CreateBooking from './pages/CreateBooking';
 import AddNewUser from './pages/AddNewUser';
 import BookingDetails from './pages/BookingDetails';
 import RecordExpense from './pages/RecordExpense';
+import Reviews from './pages/Reviews';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -83,6 +84,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/notification-rules" element={<NotificationRules />} />
               <Route path="/notifications" element={<NotificationCenter />} />
+              <Route path="/reviews" element={<Reviews />} />
+
             </Routes>
           </div>
         </div>
