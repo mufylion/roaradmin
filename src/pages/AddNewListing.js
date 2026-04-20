@@ -6,9 +6,10 @@ import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } fr
 import { useFormatCurrency, useAppConfig } from '../config/useAppConfig';
 
 export default function AddNewListing() {
-  const { config } = useAppConfig();
+  const { config, booking } = useAppConfig();
   const formatCurrency = useFormatCurrency();
-  const [currentStep, setCurrentStep] = useState(1);
+  
+    const [currentStep, setCurrentStep] = useState(1);
   const [status, setStatus] = useState('publish');
   const [seasonalPricing, setSeasonalPricing] = useState([
     {
@@ -301,15 +302,19 @@ export default function AddNewListing() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SelectField label="Cancellation Policy" defaultValue="Flexible (24-hour notice)">
-                  <option>Flexible (24-hour notice)</option>
-                  <option>Moderate (48-hour notice)</option>
-                  <option>Strict (7-day notice)</option>
-                  <option>Super Strict (30-day notice)</option>
-                </SelectField>
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cancellation Policy</label>
+                      <select className="w-full px-4 py-3 bg-card border border-border rounded-xl text-muted-foreground cursor-not-allowed outline-none" value={booking.cancellationPolicy} disabled readOnly>
+                        {booking.cancellationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                 <InputField label="Security Deposit" type="number" defaultValue="200" prefix={config.currency.symbol} />
-              </div>
+              </div> */}
 
               <TextAreaField 
                 label="Additional Rules" 

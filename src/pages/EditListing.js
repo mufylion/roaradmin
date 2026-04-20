@@ -30,7 +30,7 @@ const StatCard = ({ title, value, footer, iconColor = "text-tertiary" }) => (
 
 export default function EditListing() {
   const { id } = useParams();
-  const { config } = useAppConfig();
+  const { config, booking } = useAppConfig();
   const formatCurrency = useFormatCurrency();
   const [activeTab, setActiveTab] = useState('Basic Info');
   const [listing, setListing] = useState(null);
@@ -599,16 +599,22 @@ export default function EditListing() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="text-lg font-bold mb-4">Cancellation Policy</h3>
-                      <select className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none cursor-pointer" defaultValue={listing?.policies?.cancellation || 'flexible'}>
-                        <option value="flexible">Flexible (24-hour notice)</option>
-                        <option value="moderate">Moderate (48-hour notice)</option>
-                        <option value="strict">Strict (7-day notice)</option>
-                        <option value="super-strict">Super Strict (30-day notice)</option>
+                      <select className="w-full px-4 py-3 bg-card border border-border rounded-xl text-muted-foreground cursor-not-allowed outline-none" value={booking.cancellationPolicy} disabled readOnly>
+                        {booking.cancellationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
-                      <p className="text-xs text-muted-foreground mt-2">Guests can cancel up to 24 hours before check-in for a full refund</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {booking.cancellationPolicy === 'flexible' && 'Guests can cancel up to 24 hours before check-in for a full refund'}
+                        {booking.cancellationPolicy === 'moderate' && 'Guests can cancel up to 48 hours before check-in for a full refund'}
+                        {booking.cancellationPolicy === 'strict' && 'Guests can cancel up to 7 days before check-in for a full refund'}
+                        {booking.cancellationPolicy === 'super-strict' && 'Guests can cancel up to 30 days before check-in for a full refund'}
+                      </p>
                     </div>
 
-                    <div>
+                    {/* <div>
                       <h3 className="text-lg font-bold mb-4">Security Deposit</h3>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
@@ -619,7 +625,7 @@ export default function EditListing() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">Refunded within 7 days after check-out</p>
-                    </div>
+                    </div> */}
                   </div>
 
                   <div>

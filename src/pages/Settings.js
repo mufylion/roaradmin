@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
-import { useAppConfig, useFormatCurrency } from '../config/useAppConfig';
+import { useAppConfig, useFormatCurrency, DEFAULT_CONFIG } from '../config/useAppConfig';
 import NotificationRules from './NotificationRules.js';
 import PaymentGateways from './PaymentGateways.js';
 import EmailTemplates from './EmailTemplates.js';
@@ -55,9 +55,10 @@ const FormField = ({ label, type = "text", value, options, onChange, readOnly = 
 );
 
 export default function Settings() {
-  const { config, currency, timezone, tax, updateCurrency, updateTimezone, updateTax, resetToDefaults } = useAppConfig();
+  const { config, currency, timezone, tax, booking, updateCurrency, updateTimezone, updateTax, updateBooking, resetToDefaults } = useAppConfig();
   const [activeTab, setActiveTab] = useState('general');
   const [autoConfirm, setAutoConfirm] = useState(false);
+  
 
   const renderContent = () => {
     switch (activeTab) {
@@ -72,7 +73,28 @@ export default function Settings() {
       default:
         return (
           <>
-            
+            {/* Site Identity
+            <section className="bg-card rounded-2xl border border-border shadow-sm p-6">
+              <h2 className="text-lg font-heading font-bold mb-6">Site Identity</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Platform Name" value="RoarHomes" />
+                <FormField label="Support Email" type="email" value="support@roarhomes.com" />
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Platform Logo</label>
+                  <div className="flex items-center gap-6 p-4 border border-dashed border-border rounded-2xl bg-muted/30">
+                    <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-4xl">
+                      <Icon icon="lucide:home" />
+                    </div>
+                    <div className="space-y-2">
+                      <button className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:opacity-90 transition-opacity">
+                        Upload New Logo
+                      </button>
+                      <p className="text-[10px] text-muted-foreground">Recommended size: 512x512px. JPG, PNG, SVG allowed.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section> */}
 
             {/* Booking Rules */}
             <section className="bg-card rounded-2xl border border-border shadow-sm p-6">
@@ -95,7 +117,13 @@ export default function Settings() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField label="VAT Rate (%)" type="number" value={tax.vatRate} readOnly />
-                  <FormField label="Default Cancellation Window (Hours)" type="number" value={48} />
+                  <FormField 
+                    label="Default Cancellation Policy" 
+                    type="select" 
+                    value={booking.cancellationPolicy}
+                    onChange={(value) => updateBooking({ ...booking, cancellationPolicy: value })}
+                    options={booking.cancellationOptions}
+                  />
                 </div>
               </div>
             </section>
@@ -161,6 +189,7 @@ export default function Settings() {
                 />
               </div>
             </section>
+
 
             {/* Danger Zone */}
             <section className="bg-destructive/5 rounded-2xl border border-destructive/20 shadow-sm p-6">

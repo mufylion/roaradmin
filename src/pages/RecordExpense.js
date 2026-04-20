@@ -15,8 +15,6 @@ export default function RecordExpense() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [description, setDescription] = useState('');
-  const [taxRate, setTaxRate] = useState(0);
-  const [taxDeductible, setTaxDeductible] = useState(true);
   const [approvalStatus, setApprovalStatus] = useState('approved');
   const [linkedEntity, setLinkedEntity] = useState('');
   
@@ -37,8 +35,6 @@ export default function RecordExpense() {
           paymentMethod: 'business-cc',
           referenceNumber: 'INV-2024-034',
           description: 'Emergency plumbing repair for Malibu Villa - bathroom leak fixed',
-          taxRate: 10,
-          taxDeductible: true,
           approvalStatus: 'approved',
           linkedEntity: 'Malibu Beachfront Villa'
         }
@@ -53,18 +49,12 @@ export default function RecordExpense() {
         setPaymentMethod(expenseData.paymentMethod);
         setReferenceNumber(expenseData.referenceNumber);
         setDescription(expenseData.description);
-        setTaxRate(expenseData.taxRate);
-        setTaxDeductible(expenseData.taxDeductible);
         setApprovalStatus(expenseData.approvalStatus);
         setLinkedEntity(expenseData.linkedEntity);
       }
     }
   }, [id]);
 
-  const calculateTotal = () => {
-    const base = parseFloat(amount) || 0;
-    return (base + base * (taxRate / 100)).toFixed(2);
-  };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -160,8 +150,6 @@ export default function RecordExpense() {
       setPaymentMethod('');
       setReferenceNumber('');
       setDescription('');
-      setTaxRate(0);
-      setTaxDeductible(true);
       setApprovalStatus('approved');
       setLinkedEntity('');
       
@@ -356,44 +344,6 @@ export default function RecordExpense() {
               </div>
             </div>
 
-            {/* Tax Information */}
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-heading font-bold">Tax & Deductions</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Pre-tax Amount</span>
-                  <span className="text-sm font-bold">{config.currency.symbol}{parseFloat(amount || '0').toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Tax Rate</span>
-                  <select 
-                    className="text-sm font-bold bg-transparent outline-none text-right"
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(parseInt(e.target.value))}
-                  >
-                    <option value="0">0% (Exempt)</option>
-                    <option value="5">5% (VAT)</option>
-                    <option value="10">10% (GST)</option>
-                    <option value="15">15% (Custom)</option>
-                  </select>
-                </div>
-                <div className="pt-3 border-t border-border flex items-center justify-between">
-                  <span className="text-sm font-bold">Total Expense</span>
-                  <span className="text-sm font-extrabold text-destructive">{config.currency.symbol}{calculateTotal()}</span>
-                </div>
-              </div>
-              <div className="p-3 bg-muted/20 rounded-xl border border-border">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={taxDeductible}
-                    onChange={(e) => setTaxDeductible(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded border-input" 
-                  />
-                  <span className="text-xs font-medium">Mark as tax deductible</span>
-                </label>
-              </div>
-            </div>
 
             {/* Approval Status */}
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">

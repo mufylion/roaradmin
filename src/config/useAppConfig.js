@@ -33,6 +33,17 @@ export const DEFAULT_CONFIG = {
   tax: {
     vatRate: 7.5,
     vatDescription: 'Applied to nightly rate only'
+  },
+
+  // Booking Configuration
+  booking: {
+    cancellationPolicy: 'moderate',
+    cancellationOptions: [
+      { value: 'flexible', label: 'Flexible (24-hour notice)' },
+      { value: 'moderate', label: 'Moderate (48-hour notice)' },
+      { value: 'strict', label: 'Strict (7-day notice)' },
+      { value: 'super-strict', label: 'Super Strict (30-day notice)' }
+    ]
   }
 };
 
@@ -87,10 +98,21 @@ export function AppConfigProvider({ children }) {
     return DEFAULT_CONFIG.tax;
   });
 
+  const [booking, setBooking] = useState(() => {
+    const saved = localStorage.getItem('app_booking');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return DEFAULT_CONFIG.booking;
+      }
+    }
+    return DEFAULT_CONFIG.booking;
+  });
+
   // Save to localStorage when settings change
   useEffect(() => {
     localStorage.setItem('app_currency', JSON.stringify(currency));
-    console.log('Currency updated to:', currency);
   }, [currency]);
 
   useEffect(() => {
@@ -101,19 +123,18 @@ export function AppConfigProvider({ children }) {
     localStorage.setItem('app_tax', JSON.stringify(tax));
   }, [tax]);
 
-  // Debug log to check currency configuration
-  console.log('AppConfig - Current currency:', {
-    default: DEFAULT_CONFIG.currency.symbol,
-    current: currency.symbol,
-    display: `${currency.symbol}12000`
-  });
+  useEffect(() => {
+    localStorage.setItem('app_booking', JSON.stringify(booking));
+  }, [booking]);
 
+  
   // Dynamic config that updates based on settings
   const dynamicConfig = {
     ...DEFAULT_CONFIG,
     currency,
     timezone,
     tax,
+    booking,
     dateTime: {
       ...DEFAULT_CONFIG.dateTime,
       timezone: timezone.name,
@@ -136,11 +157,17 @@ export function AppConfigProvider({ children }) {
     setTax(newTax);
   };
 
+  // Update booking function
+  const updateBooking = (newBooking) => {
+    setBooking(newBooking);
+  };
+
   // Reset to defaults
   const resetToDefaults = () => {
     setCurrency(DEFAULT_CONFIG.currency);
     setTimezone(DEFAULT_CONFIG.timezone);
     setTax(DEFAULT_CONFIG.tax);
+    setBooking(DEFAULT_CONFIG.booking);
   };
 
   const value = {
@@ -148,9 +175,11 @@ export function AppConfigProvider({ children }) {
     currency,
     timezone,
     tax,
+    booking,
     updateCurrency,
     updateTimezone,
     updateTax,
+    updateBooking,
     resetToDefaults
   };
 
