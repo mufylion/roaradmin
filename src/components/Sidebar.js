@@ -51,9 +51,11 @@ export default function Sidebar({ onClose }) {
       <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
         <SidebarItem icon="lucide:layout-dashboard" label="Dashboard" to="/dashboard" onClose={onClose} />
         <SidebarItem icon="lucide:layers" label="Listings" to="/listings" onClose={onClose} />
+        <SidebarItem icon="lucide:calendar-days" label="Schedule" to="/schedule" onClose={onClose} />
         <SidebarItem icon="lucide:calendar" label="Bookings" to="/bookings" onClose={onClose} />
         <SidebarItem icon="lucide:users" label="Users" to="/users" onClose={onClose} />
         <SidebarItem icon="lucide:credit-card" label="Financials" to="/financials" onClose={onClose} />
+        <SidebarItem icon="lucide:star" label="Reviews" to="/reviews" onClose={onClose} />
         <div className="pt-4 mt-4 border-t border-white/10">
           <SidebarItem icon="lucide:settings" label="Settings" to="/settings" onClose={onClose} />
         </div>

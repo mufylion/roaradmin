@@ -88,6 +88,12 @@ export default function AddNewListing() {
                   <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix={config.currency.symbol} />
                 </div>
 
+                <div className="grid grid-cols-3 gap-4">
+                  <InputField label="Max Guests" placeholder="2" type="number" />
+                  <InputField label="Bedrooms" placeholder="1" type="number" />
+                  <InputField label="Bathrooms" placeholder="1" type="number" />
+                </div>
+
                 <TextAreaField label="Description" placeholder="Describe the unique features of your property..." rows="4" />
               </div>
             </FormSection>

@@ -218,6 +218,24 @@ export default function EditListing() {
                       <option value="draft">Draft</option>
                     </SelectField>
 
+                    <InputField 
+                      label="Max Guests" 
+                      type="number" 
+                      defaultValue={listing?.capacity?.guests || 0} 
+                    />
+
+                    <InputField 
+                      label="Bedrooms" 
+                      type="number" 
+                      defaultValue={listing?.capacity?.bedrooms || 0} 
+                    />
+
+                    <InputField 
+                      label="Bathrooms" 
+                      type="number" 
+                      defaultValue={listing?.capacity?.bathrooms || 0} 
+                    />
+
                     <TextAreaField 
                       label="Description" 
                       rows="6" 
