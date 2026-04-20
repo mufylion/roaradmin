@@ -188,7 +188,8 @@ export default function Listings() {
           nights: `${nights} Nights`,
           avatar: booking.guest.avatar || 'https://randomuser.me/api/portraits/men/1.jpg',
           checkInDate: booking.dates.checkIn,
-          checkOutDate: booking.dates.checkOut
+          checkOutDate: booking.dates.checkOut,
+          bookingId: booking.id
         });
       }
     });
@@ -216,11 +217,30 @@ export default function Listings() {
     });
   };
 
+  // Helper function to find booking for a specific date
+  const getBookingForDate = (date, listingId) => {
+    const dateString = date.toISOString().split('T')[0];
+    return mockBookings.find(booking => 
+      booking.listing.id === listingId &&
+      booking.dates.checkIn <= dateString &&
+      booking.dates.checkOut > dateString
+    );
+  };
+
   const handleDateClick = (day) => {
     setSelectedDate(day);
-    // Navigate to create booking page with pre-filled data
-    const bookingUrl = `/bookings/create?propertyId=${selectedListing?.id}&checkIn=${day.date.toISOString().split('T')[0]}`;
-    window.location.href = bookingUrl;
+    
+    // Check if there's an existing booking for this date
+    const existingBooking = getBookingForDate(day.date, selectedListing?.id);
+    
+    if (existingBooking) {
+      // Navigate to booking details page
+      window.location.href = `/bookings/${existingBooking.id}`;
+    } else {
+      // Navigate to create booking page with pre-filled data
+      const bookingUrl = `/bookings/create?propertyId=${selectedListing?.id}&checkIn=${day.date.toISOString().split('T')[0]}`;
+      window.location.href = bookingUrl;
+    }
   };
 
   
@@ -473,9 +493,9 @@ export default function Listings() {
                           className={`relative flex flex-col items-center justify-center p-2 border border-border/20 ${
                             dayInfo.isCurrentMonth ? 'hover:bg-muted/20' : ''
                           } ${
-                            !isBooked && dayInfo.isCurrentMonth ? 'group cursor-pointer hover:bg-muted/30' : ''
+                            dayInfo.isCurrentMonth ? 'group cursor-pointer hover:bg-muted/30' : ''
                           }`}
-                          onClick={() => !isBooked && dayInfo.isCurrentMonth && handleDateClick(dayInfo)}
+                          onClick={() => dayInfo.isCurrentMonth && handleDateClick(dayInfo)}
                         >
                           <span className={`text-xs font-bold self-end ${
                             !dayInfo.isCurrentMonth ? 'text-muted-foreground/50' : ''
@@ -485,14 +505,18 @@ export default function Listings() {
                           
                           {(bookingDisplayInfo && bookingDisplayInfo.show) && (
                             <div 
-                              className="absolute bottom-1 left-0 h-12 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10"
+                              className="absolute bottom-1 left-0 h-12 bg-white border border-border shadow-md rounded-lg flex items-center px-3 gap-3 z-10 cursor-pointer hover:shadow-lg transition-shadow"
                               style={{ width: bookingDisplayInfo.width }}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent the calendar day click
+                                window.location.href = `/bookings/${currentBookingEvent.bookingId}`;
+                              }}
                             >
                               <img src={currentBookingEvent.avatar} className="w-8 h-8 rounded-full border border-border" alt="Guest" />
                               <div className="overflow-hidden">
                                 <p className="text-[10px] font-black truncate">{currentBookingEvent.name}</p>
                                 <p className="text-[8px] text-muted-foreground tracking-widest uppercase">
-                                  {bookingDisplayInfo.isMultiWeek ? `${currentBookingEvent.nights} →` : currentBookingEvent.nights}
+                                  {bookingDisplayInfo.isMultiWeek ? `${currentBookingEvent.nights} ->` : currentBookingEvent.nights}
                                 </p>
                               </div>
                               <div className="ml-auto flex gap-1">
