@@ -5,6 +5,7 @@ import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { useFormatCurrency } from '../config/useAppConfig';
 import { mockListings } from '../data/mockListings';
+import { mockBookings } from '../data/mockBookings.js';
 
 const ListingCard = ({ 
   image, 
@@ -141,6 +142,58 @@ export default function Listings() {
   // Calendar helper functions
   const getMonthName = (date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Check if a date is booked for the selected listing using real mockBookings data
+  const isDateBookedFromMockData = (date, listingId) => {
+    const dateString = date.toISOString().split('T')[0];
+    return mockBookings.some(booking => {
+      if (booking.listing.id !== listingId) return false;
+      
+      const checkInDate = new Date(booking.dates.checkIn);
+      const checkOutDate = new Date(booking.dates.checkOut);
+      const currentDate = new Date(dateString);
+      
+      // Check if current date is between check-in and check-out (inclusive of check-in, exclusive of check-out)
+      return currentDate >= checkInDate && currentDate < checkOutDate;
+    });
+  };
+
+  // Generate booking events from real mockBookings data for the current month and listing
+  const getBookingEventsForMonth = (listingId, month) => {
+    const events = [];
+    const monthYear = month.toISOString().slice(0, 7); // YYYY-MM format
+    
+    mockBookings.forEach(booking => {
+      if (booking.listing.id !== listingId) return;
+      
+      const checkInDate = new Date(booking.dates.checkIn);
+      const checkOutDate = new Date(booking.dates.checkOut);
+      
+      // Check if booking overlaps with current month
+      if (checkOutDate > new Date(monthYear + '-01') && checkInDate < new Date(monthYear + '-31')) {
+        const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+        
+        // Find the first day of the booking in the current month
+        let firstDayInMonth = checkInDate;
+        if (checkInDate.getMonth() !== month.getMonth()) {
+          // Booking starts before current month, use first day of current month
+          firstDayInMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+        }
+        
+        events.push({
+          startDay: firstDayInMonth.getDate(),
+          duration: nights,
+          name: booking.guest.name || 'Guest',
+          nights: `${nights} Nights`,
+          avatar: booking.guest.avatar || 'https://randomuser.me/api/portraits/men/1.jpg',
+          checkInDate: booking.dates.checkIn,
+          checkOutDate: booking.dates.checkOut
+        });
+      }
+    });
+    
+    return events;
   };
 
   const getDaysInMonth = (date) => {
@@ -340,14 +393,11 @@ export default function Listings() {
                   {/* Calendar Rows */}
                   <div className="grid grid-cols-7 grid-rows-5 h-[600px]">
                     {generateCalendarDays().map((dayInfo, index) => {
-                      const isBooked = [6, 7, 8, 17, 18, 19, 20, 26, 27].includes(dayInfo.day) && dayInfo.isCurrentMonth;
+                      // Check if this day is booked using real mockBookings data
+                      const isBooked = selectedListing && isDateBookedFromMockData(dayInfo.date, selectedListing.id);
                       
-                      // Check if this day is part of any booking
-                      const bookingEvents = [
-                        { startDay: 6, duration: 3, name: 'Siri Jakobsson', nights: '3 Nights', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-                        { startDay: 17, duration: 4, name: 'Slavcho Karbashewski', nights: '4 Nights', avatar: 'https://randomuser.me/api/portraits/men/52.jpg' },
-                        { startDay: 26, duration: 2, name: 'Regina Pollastro', nights: '2 Nights', avatar: 'https://randomuser.me/api/portraits/women/65.jpg' }
-                      ];
+                      // Check if this day is part of any booking using real mockBookings data
+                      const bookingEvents = selectedListing ? getBookingEventsForMonth(selectedListing.id, currentMonth) : [];
                       
                       // Check if this is the start of a booking event
                       const currentBookingEvent = bookingEvents.find(event => 

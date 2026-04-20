@@ -432,11 +432,338 @@ const defaultUsers = [
     role: 'admin',
     createdAt: '2023-01-01',
     updatedAt: '2024-10-16'
+  },
+  {
+    id: 'user-008',
+    profile: {
+      firstName: 'Robert',
+      lastName: 'Taylor',
+      avatar: 'https://randomuser.me/api/portraits/men/15.jpg',
+      dateOfBirth: '1985-03-12',
+      gender: 'male',
+      bio: 'Frequent traveler who loves exploring new cities.',
+      languages: ['English'],
+      location: 'Chicago, Illinois',
+      joined: '2023-02-15'
+    },
+    contact: {
+      email: 'robert.taylor@example.com',
+      phone: '+1 (312) 555-0123',
+      whatsapp: '+1 (312) 555-0123'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: false,
+      address: false
+    },
+    stats: {
+      totalBookings: 12,
+      totalSpent: 1440000,
+      averageRating: 4.8,
+      reviewsGiven: 8,
+      responseRate: 95
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'CST',
+      notifications: {
+        email: true,
+        sms: false,
+        push: true
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-02-15',
+    updatedAt: '2024-10-10'
+  },
+  {
+    id: 'user-009',
+    profile: {
+      firstName: 'Emily',
+      lastName: 'Johnson',
+      avatar: 'https://randomuser.me/api/portraits/women/28.jpg',
+      dateOfBirth: '1990-07-22',
+      gender: 'female',
+      bio: 'Digital nomad working remotely while traveling.',
+      languages: ['English', 'Spanish'],
+      location: 'Austin, Texas',
+      joined: '2023-03-10'
+    },
+    contact: {
+      email: 'emily.johnson@example.com',
+      phone: '+1 (512) 555-0456',
+      whatsapp: '+1 (512) 555-0456'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: true,
+      address: false
+    },
+    stats: {
+      totalBookings: 18,
+      totalSpent: 2160000,
+      averageRating: 4.9,
+      reviewsGiven: 15,
+      responseRate: 98
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'CST',
+      notifications: {
+        email: true,
+        sms: true,
+        push: false
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-03-10',
+    updatedAt: '2024-10-12'
+  },
+  {
+    id: 'user-010',
+    profile: {
+      firstName: 'David',
+      lastName: 'Brown',
+      avatar: 'https://randomuser.me/api/portraits/men/33.jpg',
+      dateOfBirth: '1988-11-05',
+      gender: 'male',
+      bio: 'Business traveler seeking comfortable stays.',
+      languages: ['English', 'French'],
+      location: 'Boston, Massachusetts',
+      joined: '2023-04-20'
+    },
+    contact: {
+      email: 'david.brown@example.com',
+      phone: '+1 (617) 555-0789',
+      whatsapp: '+1 (617) 555-0789'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: true,
+      address: true
+    },
+    stats: {
+      totalBookings: 25,
+      totalSpent: 3000000,
+      averageRating: 4.7,
+      reviewsGiven: 20,
+      responseRate: 92
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'EST',
+      notifications: {
+        email: true,
+        sms: false,
+        push: true
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-04-20',
+    updatedAt: '2024-10-14'
+  },
+  {
+    id: 'user-011',
+    profile: {
+      firstName: 'Lisa',
+      lastName: 'Anderson',
+      avatar: 'https://randomuser.me/api/portraits/women/41.jpg',
+      dateOfBirth: '1992-02-18',
+      gender: 'female',
+      bio: 'Adventure seeker and nature lover.',
+      languages: ['English'],
+      location: 'Seattle, Washington',
+      joined: '2023-05-08'
+    },
+    contact: {
+      email: 'lisa.anderson@example.com',
+      phone: '+1 (206) 555-0234',
+      whatsapp: '+1 (206) 555-0234'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: false,
+      address: true
+    },
+    stats: {
+      totalBookings: 8,
+      totalSpent: 960000,
+      averageRating: 4.6,
+      reviewsGiven: 6,
+      responseRate: 88
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'PST',
+      notifications: {
+        email: false,
+        sms: true,
+        push: true
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-05-08',
+    updatedAt: '2024-10-16'
+  },
+  {
+    id: 'user-012',
+    profile: {
+      firstName: 'James',
+      lastName: 'Wilson',
+      avatar: 'https://randomuser.me/api/portraits/men/52.jpg',
+      dateOfBirth: '1987-09-30',
+      gender: 'male',
+      bio: 'Weekend traveler exploring nearby destinations.',
+      languages: ['English'],
+      location: 'Denver, Colorado',
+      joined: '2023-06-12'
+    },
+    contact: {
+      email: 'james.wilson@example.com',
+      phone: '+1 (303) 555-0567',
+      whatsapp: '+1 (303) 555-0567'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: true,
+      address: false
+    },
+    stats: {
+      totalBookings: 15,
+      totalSpent: 1800000,
+      averageRating: 4.8,
+      reviewsGiven: 12,
+      responseRate: 94
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'MST',
+      notifications: {
+        email: true,
+        sms: true,
+        push: false
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-06-12',
+    updatedAt: '2024-10-18'
+  },
+  {
+    id: 'user-013',
+    profile: {
+      firstName: 'Sarah',
+      lastName: 'Martinez',
+      avatar: 'https://randomuser.me/api/portraits/women/38.jpg',
+      dateOfBirth: '1991-12-14',
+      gender: 'female',
+      bio: 'Foodie traveler exploring local cuisines.',
+      languages: ['English', 'Spanish'],
+      location: 'Miami, Florida',
+      joined: '2023-07-25'
+    },
+    contact: {
+      email: 'sarah.martinez@example.com',
+      phone: '+1 (305) 555-0890',
+      whatsapp: '+1 (305) 555-0890'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: true,
+      address: true
+    },
+    stats: {
+      totalBookings: 20,
+      totalSpent: 2400000,
+      averageRating: 4.9,
+      reviewsGiven: 18,
+      responseRate: 96
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'EST',
+      notifications: {
+        email: true,
+        sms: false,
+        push: true
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-07-25',
+    updatedAt: '2024-10-20'
+  },
+  {
+    id: 'user-014',
+    profile: {
+      firstName: 'Michael',
+      lastName: 'Thompson',
+      avatar: 'https://randomuser.me/api/portraits/men/47.jpg',
+      dateOfBirth: '1989-05-08',
+      gender: 'male',
+      bio: 'Luxury traveler seeking premium experiences.',
+      languages: ['English', 'German'],
+      location: 'Las Vegas, Nevada',
+      joined: '2023-08-30'
+    },
+    contact: {
+      email: 'michael.thompson@example.com',
+      phone: '+1 (702) 555-0123',
+      whatsapp: '+1 (702) 555-0123'
+    },
+    verification: {
+      email: true,
+      phone: true,
+      identity: true,
+      address: true
+    },
+    stats: {
+      totalBookings: 30,
+      totalSpent: 3600000,
+      averageRating: 5.0,
+      reviewsGiven: 25,
+      responseRate: 100
+    },
+    preferences: {
+      language: 'English',
+      currency: 'NGN',
+      timezone: 'PST',
+      notifications: {
+        email: true,
+        sms: true,
+        push: true
+      }
+    },
+    status: 'active',
+    role: 'guest',
+    createdAt: '2023-08-30',
+    updatedAt: '2024-10-22'
   }
 ];
 
 export const getUserById = (id) => {
-  return mockUsers.find(user => user.id === id);
+  console.log('getUserById called with id:', id);
+  console.log('Available users:', mockUsers.map(u => u.id));
+  console.log('Total users count:', mockUsers.length);
+  const user = mockUsers.find(user => user.id === id);
+  console.log('Found user:', user);
+  return user;
 };
 
 export const getUsersByRole = (role) => {
@@ -498,6 +825,5 @@ export const getUserStats = () => {
   };
 };
 
-// Load users from localStorage if available, otherwise use defaults
-const storedUsers = localStorage.getItem('mockUsers');
-export const mockUsers = storedUsers ? JSON.parse(storedUsers) : defaultUsers;
+// Always use fresh data from the array
+export const mockUsers = defaultUsers;

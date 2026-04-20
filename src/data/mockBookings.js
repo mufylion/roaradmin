@@ -68,7 +68,10 @@ export const mockBookings = [
     id: 'BK-9022',
     guest: {
       id: 'user-002',
-      ...getUserDisplayData('user-002')
+      get name() { return getUserDisplayData('user-002').name; },
+      get avatar() { return getUserDisplayData('user-002').avatar; },
+      get email() { return getUserDisplayData('user-002').email; },
+      get phone() { return getUserDisplayData('user-002').phone; }
     },
     listing: {
       id: 'SN-98236',
@@ -77,8 +80,8 @@ export const mockBookings = [
       image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     dates: {
-      checkIn: '2024-10-26',
-      checkOut: '2024-10-30',
+      checkIn: '2026-05-05',
+      checkOut: '2026-05-09',
       nights: 4
     },
     pricing: {
@@ -152,7 +155,10 @@ export const mockBookings = [
     id: 'BK-9024',
     guest: {
       id: 'user-004',
-      ...getUserDisplayData('user-004')
+      get name() { return getUserDisplayData('user-004').name; },
+      get avatar() { return getUserDisplayData('user-004').avatar; },
+      get email() { return getUserDisplayData('user-004').email; },
+      get phone() { return getUserDisplayData('user-004').phone; }
     },
     listing: {
       id: 'SN-98236',
@@ -161,8 +167,8 @@ export const mockBookings = [
       image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     dates: {
-      checkIn: '2024-10-15',
-      checkOut: '2024-10-17',
+      checkIn: '2026-05-12',
+      checkOut: '2026-05-14',
       nights: 2
     },
     pricing: {
@@ -406,7 +412,10 @@ export const mockBookings = [
     id: 'BK-9030',
     guest: {
       id: 'user-003',
-      ...getUserDisplayData('user-003')
+      get name() { return getUserDisplayData('user-003').name; },
+      get avatar() { return getUserDisplayData('user-003').avatar; },
+      get email() { return getUserDisplayData('user-003').email; },
+      get phone() { return getUserDisplayData('user-003').phone; }
     },
     listing: {
       id: 'SN-98236',
@@ -415,8 +424,8 @@ export const mockBookings = [
       image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     dates: {
-      checkIn: '2024-08-10',
-      checkOut: '2024-08-15',
+      checkIn: '2026-05-18',
+      checkOut: '2026-05-23',
       nights: 5
     },
     pricing: {
@@ -448,7 +457,10 @@ export const mockBookings = [
     id: 'BK-9031',
     guest: {
       id: 'user-008',
-      ...getUserDisplayData('user-008')
+      get name() { return getUserDisplayData('user-008').name; },
+      get avatar() { return getUserDisplayData('user-008').avatar; },
+      get email() { return getUserDisplayData('user-008').email; },
+      get phone() { return getUserDisplayData('user-008').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -484,7 +496,10 @@ export const mockBookings = [
     id: 'BK-9032',
     guest: {
       id: 'user-009',
-      ...getUserDisplayData('user-009')
+      get name() { return getUserDisplayData('user-009').name; },
+      get avatar() { return getUserDisplayData('user-009').avatar; },
+      get email() { return getUserDisplayData('user-009').email; },
+      get phone() { return getUserDisplayData('user-009').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -520,7 +535,10 @@ export const mockBookings = [
     id: 'BK-9033',
     guest: {
       id: 'user-010',
-      ...getUserDisplayData('user-010')
+      get name() { return getUserDisplayData('user-010').name; },
+      get avatar() { return getUserDisplayData('user-010').avatar; },
+      get email() { return getUserDisplayData('user-010').email; },
+      get phone() { return getUserDisplayData('user-010').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -556,7 +574,10 @@ export const mockBookings = [
     id: 'BK-9034',
     guest: {
       id: 'user-011',
-      ...getUserDisplayData('user-011')
+      get name() { return getUserDisplayData('user-011').name; },
+      get avatar() { return getUserDisplayData('user-011').avatar; },
+      get email() { return getUserDisplayData('user-011').email; },
+      get phone() { return getUserDisplayData('user-011').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -592,7 +613,10 @@ export const mockBookings = [
     id: 'BK-9035',
     guest: {
       id: 'user-012',
-      ...getUserDisplayData('user-012')
+      get name() { return getUserDisplayData('user-012').name; },
+      get avatar() { return getUserDisplayData('user-012').avatar; },
+      get email() { return getUserDisplayData('user-012').email; },
+      get phone() { return getUserDisplayData('user-012').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -628,7 +652,10 @@ export const mockBookings = [
     id: 'BK-9036',
     guest: {
       id: 'user-013',
-      ...getUserDisplayData('user-013')
+      get name() { return getUserDisplayData('user-013').name; },
+      get avatar() { return getUserDisplayData('user-013').avatar; },
+      get email() { return getUserDisplayData('user-013').email; },
+      get phone() { return getUserDisplayData('user-013').phone; }
     },
     listing: {
       id: 'SN-98234',
@@ -664,7 +691,10 @@ export const mockBookings = [
     id: 'BK-9037',
     guest: {
       id: 'user-014',
-      ...getUserDisplayData('user-014')
+      get name() { return getUserDisplayData('user-014').name; },
+      get avatar() { return getUserDisplayData('user-014').avatar; },
+      get email() { return getUserDisplayData('user-014').email; },
+      get phone() { return getUserDisplayData('user-014').phone; }
     },
     listing: {
       id: 'SN-98234',
