@@ -26,7 +26,7 @@ const SidebarItem = ({ icon, label, active = false, to = "#", onClose }) => {
     <Link
       to={to}
       onClick={handleClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+      className={`flx items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
         isActive
           ? 'bg-primary text-white shadow-sm'
           : 'hover:bg-white/10 text-white'
