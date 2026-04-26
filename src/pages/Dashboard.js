@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
@@ -18,10 +18,9 @@ import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
 import TimePeriodFilter from '../components/TimePeriodFilter';
 import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
-import { mockBookings, getBookingStats } from '../data/mockBookings';
-import { mockUsers, getUserStats } from '../data/mockUsers';
-import { mockFinancials } from '../data/mockFinancials';
-import { useTimeBasedData } from '../hooks/useTimeBasedData';
+import { useDashboardStats } from '../hooks/useDashboardStats';
+import { useBookings } from '../hooks/useBookings';
+import { useProperties } from '../hooks/useProperties';
 
 // Notification Item component for Dashboard
 const DashboardNotificationItem = ({
@@ -48,7 +47,7 @@ const DashboardNotificationItem = ({
         <h3 className="text-sm font-bold text-foreground truncate">{title}</h3>
         <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tighter">{time}</span>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <div className="text-sm text-muted-foreground leading-relaxed">{description}</div>
       {actionLabel && (
         category === 'bookings' && relatedId ? (
           <Link 
@@ -70,9 +69,6 @@ const DashboardNotificationItem = ({
           </button>
         )
       )}
-    </div>
-    <div className="flex flex-col items-end gap-2 shrink-0">
-      <Icon icon="lucide:more-vertical" className="text-muted-foreground cursor-pointer hover:text-foreground" />
     </div>
   </div>
 );
@@ -96,34 +92,35 @@ const StatCard = ({
   trend,
   colorClass,
   bgClass,
+  loading = false
 }) => (
   <div className="bg-card p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow group cursor-default">
-    <div className="flex items-center justify-between mb-4">
-      <div className={`w-12 h-12 ${bgClass} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-        <Icon icon={icon} className={`text-2xl ${colorClass}`} />
+    {loading ? (
+      <div className="animate-pulse space-y-4">
+        <div className="flex justify-between">
+          <div className="w-12 h-12 bg-muted rounded-xl"></div>
+          <div className="w-12 h-6 bg-muted rounded-lg"></div>
+        </div>
+        <div className="h-4 bg-muted w-1/2 rounded"></div>
+        <div className="h-8 bg-muted w-3/4 rounded"></div>
       </div>
-      {trend && (
-        <span className={`text-xs font-bold ${trend.includes('+') || trend.includes('%') ? 'text-tertiary bg-tertiary/10' : 'text-muted-foreground bg-muted'} px-2 py-1 rounded-lg flex items-center gap-1`}>
-          {trend.includes('%') && <Icon icon="lucide:arrow-up-right" />}
-          {trend}
-        </span>
-      )}
-    </div>
-    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{label}</p>
-    <h3 className="text-2xl font-bold mt-1">{value}</h3>
-  </div>
-);
-
-const ActivityItem = ({ icon, bgClass, iconColor, title, subtitle, time }) => (
-  <div className="flex gap-4 group cursor-pointer">
-    <div className={`w-10 h-10 rounded-full ${bgClass} flex items-center justify-center shrink-0 transition-colors`}>
-      <Icon icon={icon} className={`${iconColor} text-xl`} />
-    </div>
-    <div className="flex-1">
-      <p className={`text-sm font-semibold group-hover:${iconColor} transition-colors`}>{title}</p>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
-      <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-tighter">{time}</p>
-    </div>
+    ) : (
+      <>
+        <div className="flex items-center justify-between mb-4">
+          <div className={`w-12 h-12 ${bgClass} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+            <Icon icon={icon} className={`text-2xl ${colorClass}`} />
+          </div>
+          {trend && (
+            <span className={`text-xs font-bold ${trend.includes('+') || trend.includes('%') ? 'text-tertiary bg-tertiary/10' : 'text-muted-foreground bg-muted'} px-2 py-1 rounded-lg flex items-center gap-1`}>
+              {trend.includes('%') && <Icon icon="lucide:arrow-up-right" />}
+              {trend}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{label}</p>
+        <h3 className="text-2xl font-bold mt-1">{value}</h3>
+      </>
+    )}
   </div>
 );
 
@@ -132,133 +129,22 @@ export default function Dashboard() {
   const formatDate = useFormatDate();
   const [chartPeriod, setChartPeriod] = useState('This Month');
 
-  // Calculate stats from mock data
-  const bookingStats = useMemo(() => getBookingStats(), []);
-  const userStats = useMemo(() => getUserStats(), []);
-  
-  // Calculate truly active bookings (currently staying)
-  const activeBookings = useMemo(() => {
-    // Use current date (April 2026)
-    const today = new Date();
-    return mockBookings.filter(booking => {
-      if (booking.status !== 'confirmed') return false;
-      const checkIn = new Date(booking.dates.checkIn);
-      const checkOut = new Date(booking.dates.checkOut);
-      return checkIn <= today && checkOut >= today;
-    }).length;
-  }, []);
+  const { stats, activity, loading: statsLoading, error: statsError } = useDashboardStats();
+  const { bookings, loading: bookingsLoading } = useBookings({ limit: 5 });
+  const { properties } = useProperties();
 
-  // Use reusable time-based data hook
-  const timeBasedData = useTimeBasedData(chartPeriod, mockBookings);
-
-  // Generate recent activity notifications
-  const recentActivity = useMemo(() => {
-    const activities = [];
-    
-    // Add booking-related notifications
-    const recentBookings = mockBookings
-      .filter(b => b.status === 'confirmed' || b.status === 'pending')
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 3);
-    
-    recentBookings.forEach((booking, index) => {
-      const bookingDate = new Date(booking.createdAt);
-      const now = new Date();
-      const diffMs = now - bookingDate;
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      
-      activities.push({
-        id: 1000 + index,
-        unread: Math.random() > 0.5,
-        icon: "lucide:calendar-check",
-        iconBgClass: "bg-primary/10",
-        iconColorClass: "text-primary",
-        title: booking.status === 'confirmed' ? "New Booking Confirmed" : "New Booking Request",
-        time: diffDays > 0 ? `${diffDays} day${diffDays === 1 ? '' : 's'} ago` : `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`,
-        description: <>
-          Guest <span className="font-bold text-foreground">{booking.guest.name}</span> -{' '}
-          <span className="font-bold text-foreground">{booking.listing.title}</span>
-        </>,
-        actionLabel: "View Details",
-        category: "bookings",
-        relatedId: booking.id
-      });
-    });
-
-    // Add user-related notifications
-    const recentUsers = mockUsers
-      .filter(u => u.createdAt)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 2);
-    recentUsers.forEach((user, index) => {
-      const userDate = new Date(user.createdAt);
-      const now = new Date();
-      const diffMs = now - userDate;
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      
-      activities.push({
-        id: 2000 + index,
-        unread: Math.random() > 0.5,
-        icon: "lucide:user-plus",
-        iconBgClass: "bg-purple-500/10",
-        iconColorClass: "text-purple-500",
-        title: "New User Registration",
-        time: diffDays > 0 ? `${diffDays} day${diffDays === 1 ? '' : 's'} ago` : `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`,
-        description: <>
-          <span className="font-bold text-foreground">{user.name}</span> joined the platform.
-        </>,
-        actionLabel: "View Profile",
-        category: "users",
-        relatedId: user.id
-      });
-    });
-
-    // Add system notifications
-    const systemNotifications = [
-      {
-        id: 3001,
-        unread: true,
-        icon: "lucide:shield-alert",
-        iconBgClass: "bg-orange-500/10",
-        iconColorClass: "text-orange-500",
-        title: "Host Verification Required",
-        time: "2 hours ago",
-        description: <>
-          Host <span className="font-bold text-foreground">Marcus Chen</span> uploaded new identity documents for{' '}
-          verification. Action required before listing activation.
-        </>,
-        actionLabel: "Review Documents",
-        category: "system"
-      },
-      {
-        id: 3002,
-        unread: false,
-        icon: "lucide:credit-card",
-        iconBgClass: "bg-muted",
-        iconColorClass: "text-muted-foreground",
-        title: "Payout Processed Successfully",
-        time: "6 hours ago",
-        description: <>
-          Weekly payout of ₦1,245,000 has been initiated to your primary bank account ending in ****4291.
-        </>,
-        actionLabel: "View Details",
-        category: "system"
-      }
-    ];
-
-    return [...activities, ...systemNotifications];
-  }, []);
-
-  // Generate chart data from time-based hook
+  // Generate chart data from real backend series
   const chartData = useMemo(() => {
+    const series = stats?.revenueSeries || [];
+    const labels = series.length > 0 ? series.map(s => s.month) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const data = series.length > 0 ? series.map(s => s.revenue) : [0, 0, 0, 0, 0, 0];
+
     return {
-      labels: timeBasedData.labels,
+      labels,
       datasets: [
         {
           label: 'Revenue',
-          data: timeBasedData.revenueData,
+          data,
           borderColor: '#2563eb',
           backgroundColor: 'rgba(37, 99, 235, 0.1)',
           borderWidth: 3,
@@ -272,7 +158,7 @@ export default function Dashboard() {
         },
       ],
     };
-  }, [timeBasedData]);
+  }, [stats]);
 
   const chartOptions = {
     responsive: true,
@@ -334,41 +220,50 @@ export default function Dashboard() {
         }
       />
 
-      {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
+        {statsError && (
+          <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-bold">
+            {statsError}
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
             icon="lucide:activity" 
             label="Total Revenue" 
-            value={formatCurrency(timeBasedData.totalRevenue)}
-            trend={timeBasedData.monthlyGrowth > 0 ? `+${timeBasedData.monthlyGrowth}%` : "No activity this year"} 
-            colorClass={timeBasedData.monthlyGrowth > 0 ? "text-primary" : "text-muted-foreground"} 
-            bgClass={timeBasedData.monthlyGrowth > 0 ? "bg-primary/10" : "bg-muted"} 
+            value={formatCurrency(stats?.totalRevenue || 0)}
+            trend={stats?.revenueGrowth > 0 ? `+${stats.revenueGrowth}%` : "No growth"} 
+            colorClass="text-primary" 
+            bgClass="bg-primary/10" 
+            loading={statsLoading}
           />
           <StatCard 
             icon="lucide:calendar" 
-            label="Active Bookings" 
-            value={activeBookings} 
-            trend={activeBookings > 0 ? "+8.2%" : "None currently"} 
+            label="Confirmed Bookings" 
+            value={stats?.confirmedBookings || 0} 
+            trend="Active" 
             colorClass="text-tertiary" 
             bgClass="bg-tertiary/10" 
+            loading={statsLoading}
           />
           <StatCard 
             icon="lucide:layers" 
             label="Total Listings" 
-            value={userStats.totalListings} 
+            value={stats?.totalProperties || properties.length} 
             trend="Stable" 
             colorClass="text-orange-500" 
             bgClass="bg-orange-500/10" 
+            loading={statsLoading}
           />
           <StatCard 
             icon="lucide:users" 
             label="Total Users" 
-            value={userStats.total} 
-            trend={`+${userStats.newThisMonth}`} 
+            value={stats?.totalUsers || 0} 
+            trend={`+${stats?.newUsersToday || 0}`} 
             colorClass="text-purple-500" 
             bgClass="bg-purple-500/10" 
+            loading={statsLoading}
           />
         </div>
 
@@ -397,21 +292,37 @@ export default function Dashboard() {
           <div className="bg-card p-6 rounded-2xl border border-border shadow-sm flex flex-col">
             <h2 className="text-lg font-heading font-bold mb-6">Recent Activity</h2>
             <div className="space-y-6 flex-1">
-              {recentActivity.slice(0, 3).map((activity, index) => (
-                <DashboardNotificationItem 
-                  key={activity.id}
-                  icon={activity.icon}
-                  iconBgClass={activity.iconBgClass}
-                  iconColorClass={activity.iconColorClass}
-                  title={activity.title}
-                  time={activity.time}
-                  description={activity.description}
-                  actionLabel={activity.actionLabel}
-                  showBorder={activity.unread}
-                  category={activity.category}
-                  relatedId={activity.relatedId}
-                />
-              ))}
+              {statsLoading ? (
+                <div className="flex justify-center items-center h-full">
+                  <Icon icon="lucide:loader-2" className="text-3xl text-primary animate-spin" />
+                </div>
+              ) : (
+                activity.slice(0, 2).map((item) => (
+                  <DashboardNotificationItem 
+                    key={item.id}
+                    icon={item.icon || (item.type === 'booking' ? "lucide:calendar-check" : "lucide:user-plus")}
+                    iconBgClass={
+                      item.type === 'booking' ? "bg-primary/10" : 
+                      item.type === 'property' ? "bg-orange-500/10" : "bg-purple-500/10"
+                    }
+                    iconColorClass={
+                      item.type === 'booking' ? "text-primary" : 
+                      item.type === 'property' ? "text-orange-500" : "text-purple-500"
+                    }
+                    title={item.title}
+                    time={formatDate(item.time)}
+                    description={item.description}
+                    actionLabel="View Details"
+                    category={item.type === 'booking' ? "bookings" : item.type === 'user' ? "users" : "listings"}
+                    relatedId={item.id.split('-')[1]}
+                  />
+                ))
+              )}
+              {!statsLoading && activity.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  No recent activity.
+                </div>
+              )}
             </div>
             <Link to="/notifications" className="w-full mt-6 py-2.5 bg-muted hover:bg-muted/80 text-sm font-bold rounded-xl transition-all active:scale-95 text-center block">View All Activity</Link>
           </div>
@@ -429,23 +340,31 @@ export default function Dashboard() {
           
           <UniversalTable
             headers={['Guest', 'Property', 'Check In', 'Amount', 'Status', 'Actions']}
-            data={mockBookings.slice(0, 5).map(booking => ({
+            data={bookings.map(booking => ({
               col0: ({ rowIndex }) => (
                 <div className="flex items-center gap-3">
-                  <img src={booking.guest.avatar} className="w-8 h-8 rounded-full ring-2 ring-transparent group-hover:ring-primary/20 transition-all" alt={booking.guest.name} />
-                  <span className="text-sm font-semibold">{booking.guest.name}</span>
+                  <div className="w-8 h-8 rounded-full border border-border bg-muted flex items-center justify-center overflow-hidden">
+                    {booking.User?.avatar ? (
+                      <img src={booking.User.avatar} className="w-full h-full object-cover" alt="guest" />
+                    ) : (
+                      <Icon icon="lucide:user" className="text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold">
+                    {`${booking.guestFirstName || booking.User?.firstName || ''} ${booking.guestLastName || booking.User?.lastName || ''}`.trim()}
+                  </span>
                 </div>
               ),
-              col1: booking.listing.title,
-              col2: formatDate(booking.dates.checkIn),
-              col3: <span className="text-sm font-bold">{formatCurrency(booking.pricing.total)}</span>,
+              col1: booking.Property?.name || 'Unknown',
+              col2: formatDate(booking.checkInDate),
+              col3: <span className="text-sm font-bold">{formatCurrency(booking.totalAmount)}</span>,
               col4: (
                 <span className={`px-2 py-1 text-[10px] font-black rounded-lg uppercase ${
                   booking.status === 'confirmed' ? 'bg-tertiary/10 text-tertiary' : 
                   booking.status === 'pending' ? 'bg-primary/10 text-primary' : 
                   'bg-destructive/10 text-destructive'
                 }`}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                  {booking.status}
                 </span>
               ),
               col5: (
@@ -458,13 +377,15 @@ export default function Dashboard() {
                 </Link>
               )
             }))}
+            loading={bookingsLoading}
             searchPlaceholder="Search bookings..."
             filterButton={true}
             exportButton={true}
-            mobileColumns={[0, 2, 4]} // Guest, Check In, Status on mobile
+            mobileColumns={[0, 2, 4]} 
           />
         </div>
       </div>
     </PageLayout>
   );
 }
+

@@ -1,302 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
 import { useFormatCurrency, useAppConfig } from '../config/useAppConfig';
-import { mockUsers } from '../data/mockUsers.js';
-import { mockListings } from '../data/mockListings.js';
+import propertiesService from '../services/propertiesService';
+import usersService from '../services/usersService';
+import bookingsService from '../services/bookingsService';
 
 export default function CreateBooking() {
+  const navigate = useNavigate();
   const formatCurrency = useFormatCurrency();
   const { config } = useAppConfig();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryPropertyId = searchParams.get('propertyId');
+  const queryCheckIn = searchParams.get('checkIn');
+  
   const [guestCount, setGuestCount] = useState(2);
   const [insuranceEnabled, setInsuranceEnabled] = useState(true);
   const [selectedGuest, setSelectedGuest] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState('');
-  const [checkInDate, setCheckInDate] = useState('');
-  const [checkOutDate, setCheckOutDate] = useState('');
-  const [bookingSource, setBookingSource] = useState('');
-  const [specialRequests, setSpecialRequests] = useState('');
-  const [checkInMonth, setCheckInMonth] = useState(new Date()); // Current month
-  const [checkOutMonth, setCheckOutMonth] = useState(new Date()); // Current month
-  
-  // User search and new guest states
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedGuestId, setSelectedGuestId] = useState('');
-  const [showNewGuestModal, setShowNewGuestModal] = useState(false);
-  const [newGuest, setNewGuest] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    location: ''
-  });
+  const [selectedProperty, setSelectedProperty] = useState(queryPropertyId || '');
+  const [checkInDate, setCheckInDate] = useState(queryCheckIn || '');
+  const [checkOutDate, setCheckOutDate] = useState('');
+  const [bookingSource, setBookingSource] = useState('direct');
+  const [specialRequests, setSpecialRequests] = useState('');
   
+  const [properties, setProperties] = useState([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const isEditMode = id && id !== 'undefined';
   const pageTitle = isEditMode ? 'Edit Booking' : 'Create New Booking';
 
-  // Load booking data for edit mode
+  // Fetch properties on mount
   useEffect(() => {
-    if (isEditMode) {
-      // In a real app, you would fetch booking data here
-      // For demo purposes, we'll use mock data
-      const mockBookingData = {
-        'BK-9021': {
-          guestCount: 4,
-          selectedGuest: 'John Doe',
-          selectedProperty: 'ocean-breeze',
-          checkInDate: '2024-12-15',
-          checkOutDate: '2024-12-18',
-          bookingSource: 'direct',
-          specialRequests: 'Late check-in requested, please prepare room'
-        }
-      };
-      
-      const bookingData = mockBookingData[id];
-      if (bookingData) {
-        setGuestCount(bookingData.guestCount);
-        setSelectedGuest(bookingData.selectedGuest);
-        setSelectedProperty(bookingData.selectedProperty);
-        setCheckInDate(bookingData.checkInDate);
-        setCheckOutDate(bookingData.checkOutDate);
-        setBookingSource(bookingData.bookingSource);
-        setSpecialRequests(bookingData.specialRequests);
+    const fetchProperties = async () => {
+      try {
+        const data = await propertiesService.fetchProperties();
+        setProperties(data);
+      } catch (err) {
+        console.error('Failed to fetch properties:', err);
       }
-    }
-  }, [id]);
-
-  // Handle URL query parameters for pre-filled data
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const propertyId = urlParams.get('propertyId');
-    const checkIn = urlParams.get('checkIn');
-    
-    if (propertyId) {
-      setSelectedProperty(propertyId);
-    }
-    
-    if (checkIn) {
-      setCheckInDate(checkIn);
-      // Auto-set checkout date to next day
-      const checkInDateObj = new Date(checkIn);
-      checkInDateObj.setDate(checkInDateObj.getDate() + 1);
-      setCheckOutDate(checkInDateObj.toISOString().split('T')[0]);
-    }
+    };
+    fetchProperties();
   }, []);
 
-  // User search functionality
+  // Search users when query changes
   useEffect(() => {
-    if (userSearchQuery) {
-      const filtered = mockUsers.filter(user => 
-        user.role === 'guest' && (
-          user.profile.firstName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-          user.profile.lastName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-          user.contact.email.toLowerCase().includes(userSearchQuery.toLowerCase())
-        )
-      );
-      setFilteredUsers(filtered);
-      setShowUserDropdown(true);
+    if (userSearchQuery && userSearchQuery.length >= 2) {
+      const searchUsers = async () => {
+        try {
+          const data = await usersService.fetchUsers({ search: userSearchQuery });
+          setFilteredUsers(data.users || []);
+          setShowUserDropdown(true);
+        } catch (err) {
+          console.error('Failed to search users:', err);
+        }
+      };
+      const timer = setTimeout(searchUsers, 500);
+      return () => clearTimeout(timer);
     } else {
       setFilteredUsers([]);
       setShowUserDropdown(false);
     }
   }, [userSearchQuery]);
 
-  // Handle user selection
   const handleUserSelect = (user) => {
     setSelectedGuestId(user.id);
-    setSelectedGuest(`${user.profile.firstName} ${user.profile.lastName}`);
+    setSelectedGuest(`${user.firstName} ${user.lastName}`);
     setUserSearchQuery('');
     setShowUserDropdown(false);
   };
-
-  // Handle new guest creation
-  const handleCreateNewGuest = () => {
-    if (newGuest.firstName && newGuest.lastName && newGuest.email) {
-      // In a real app, you would save this to the database
-      const newUser = {
-        id: `user-${Date.now()}`,
-        profile: {
-          firstName: newGuest.firstName,
-          lastName: newGuest.lastName,
-          avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'women' : 'men'}/${Math.floor(Math.random() * 50)}.jpg`,
-          location: newGuest.location || 'Unknown'
-        },
-        contact: {
-          email: newGuest.email,
-          phone: newGuest.phone || '+1 (555) 000-0000'
-        },
-        role: 'guest',
-        status: 'active',
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        verification: {
-          email: true,
-          phone: false,
-          identity: false
-        },
-        stats: {
-          totalBookings: 0,
-          averageRating: 0,
-          responseRate: 0,
-          totalSpent: 0
-        }
-      };
-      
-      // Add to mock users (in real app, this would be an API call)
-      mockUsers.push(newUser);
-      
-      // Select the new guest
-      handleUserSelect(newUser);
-      
-      // Reset form and close modal
-      setNewGuest({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        location: ''
-      });
-      setShowNewGuestModal(false);
-    }
-  };
-
-  // Sample booked dates for demonstration
-  const bookedDates = [
-    '2024-10-12', '2024-10-13', '2024-10-14',
-    '2024-10-20', '2024-10-21', '2024-10-25', '2024-10-26',
-    '2024-11-05', '2024-11-06', '2024-11-07',
-    '2024-11-15', '2024-11-16', '2024-11-22'
-  ];
 
   const calculateTotal = () => {
     const nights = checkInDate && checkOutDate ? 
       Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0;
     
-    // Get selected listing data
-    const selectedListingData = mockListings.find(listing => listing.id === selectedProperty);
-    const nightlyRate = selectedListingData?.price?.nightly || 35000; // Default to 35000 if no listing selected
-    const cautionFee = selectedListingData?.price?.fees?.caution || 25000; // Default to 25000 if not set
-    const insurance = insuranceEnabled ? 4500 : 0; // Naira
-    
-    // VAT on total nightly rate only
+    const listing = properties.find(p => p.id == selectedProperty);
+    const nightlyRate = listing?.pricePerNight || 0;
+    const insurance = insuranceEnabled ? 4500 : 0;
     const vat = Math.round((nightlyRate * nights) * (config.tax.vatRate / 100));
     
-    return (nightlyRate * nights) + cautionFee + vat + insurance;
+    return (nightlyRate * nights) + vat + insurance;
   };
 
-  const isDateBooked = (dateString) => {
-    return bookedDates.includes(dateString);
-  };
+  const handleConfirm = async () => {
+    if (!selectedGuestId) {
+      setError('Please search and select a guest from the dropdown list.');
+      return;
+    }
+    if (!selectedProperty) {
+      setError('Please select a property.');
+      return;
+    }
+    if (!checkInDate || !checkOutDate) {
+      setError('Please select both check-in and check-out dates.');
+      return;
+    }
 
-  const navigateMonth = (type, direction) => {
-    if (type === 'checkin') {
-      const newMonth = new Date(checkInMonth);
-      if (direction === 'prev') {
-        newMonth.setMonth(newMonth.getMonth() - 1);
-      } else {
-        newMonth.setMonth(newMonth.getMonth() + 1);
-      }
-      setCheckInMonth(newMonth);
-    } else {
-      const newMonth = new Date(checkOutMonth);
-      if (direction === 'prev') {
-        newMonth.setMonth(newMonth.getMonth() - 1);
-      } else {
-        newMonth.setMonth(newMonth.getMonth() + 1);
-      }
-      setCheckOutMonth(newMonth);
-    }
-  };
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        userId: selectedGuestId,
+        propertyId: selectedProperty,
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate,
+        numberOfGuests: guestCount,
+        notes: specialRequests,
+        status: 'confirmed',
+        paymentStatus: 'paid'
+      };
 
-  const generateCalendarDays = (type = 'preview') => {
-    let currentDate;
-    if (type === 'checkin') {
-      currentDate = checkInMonth;
-    } else if (type === 'checkout') {
-      currentDate = checkOutMonth;
-    } else {
-      currentDate = new Date(2024, 10, 1); // November for preview
-    }
-    
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay();
-    
-    const days = [];
-    
-    // Add empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${type}-${i}`} className="p-2"></div>);
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const isBooked = isDateBooked(dateString);
-      let isSelected = false;
-      
-      // Check if this day is invalid for checkout (before or on check-in date)
-      const isInvalidCheckout = type === 'checkout' && checkInDate && 
-        new Date(dateString) <= new Date(checkInDate);
-      
-      if (type === 'checkin') {
-        isSelected = checkInDate === dateString;
-      } else if (type === 'checkout') {
-        isSelected = checkOutDate === dateString;
+      if (isEditMode) {
+        // await bookingsService.updateBooking(id, payload);
       } else {
-        isSelected = checkInDate === dateString || checkOutDate === dateString;
+        await bookingsService.createBooking(payload);
       }
-      
-      days.push(
-        <div
-          key={`${type}-${day}`}
-          className={`
-            p-2 rounded-lg text-sm font-medium transition-colors
-            ${isBooked ? 'bg-destructive text-destructive-foreground' : 
-              isInvalidCheckout ? 'bg-muted/30 text-muted-foreground cursor-not-allowed' :
-              isSelected ? 'bg-primary text-primary-foreground' : 
-                'hover:bg-muted text-foreground cursor-pointer'}
-          `}
-          onClick={() => {
-            if (!isBooked && !isInvalidCheckout) {
-              if (type === 'checkin') {
-                setCheckInDate(dateString);
-                // Clear checkout date if it's before or on the new check-in date
-                if (checkOutDate && new Date(checkOutDate) <= new Date(dateString)) {
-                  setCheckOutDate('');
-                }
-              } else if (type === 'checkout') {
-                // Validate checkout date is after check-in date
-                if (checkInDate && new Date(dateString) > new Date(checkInDate)) {
-                  setCheckOutDate(dateString);
-                }
-              } else {
-                if (!checkInDate) {
-                  setCheckInDate(dateString);
-                } else if (!checkOutDate) {
-                  // Validate checkout date is after check-in date
-                  if (new Date(dateString) > new Date(checkInDate)) {
-                    setCheckOutDate(dateString);
-                  }
-                }
-              }
-            }
-          }}
-        >
-          {day}
-        </div>
-      );
+      navigate('/bookings');
+    } catch (err) {
+      const data = err.response?.data;
+      const errorMessage = data?.error || (data?.errors && data.errors.map(e => e.message).join(', ')) || data?.message || err.message || 'Failed to create booking';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
-    
-    return days;
   };
 
   return (
@@ -313,77 +147,68 @@ export default function CreateBooking() {
           {
             type: 'button',
             label: 'Cancel',
-            onClick: () => window.history.back()
+            onClick: () => navigate('/bookings')
           },
           {
             type: 'button',
-            label: isEditMode ? 'Update Booking' : 'Confirm Reservation',
-            shortLabel: isEditMode ? 'Update' : 'Confirm',
-            variant: 'primary'
+            label: loading ? 'Processing...' : (isEditMode ? 'Update Booking' : 'Confirm Reservation'),
+            variant: 'primary',
+            onClick: handleConfirm,
+            disabled: loading
           }
         ]}
       />
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">
+        {error && (
+          <div className="max-w-5xl mx-auto mb-6 bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-bold">
+            {error}
+          </div>
+        )}
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Form Details */}
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* Guest Selection */}
             <FormSection title="Guest Information" icon="lucide:user">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 relative">
-                  <InputField 
-                    label="Select Guest"
-                    placeholder="Search by name or email..."
-                    value={userSearchQuery || selectedGuest}
-                    onChange={(e) => {
-                      setUserSearchQuery(e.target.value);
-                      if (!e.target.value) {
-                        setSelectedGuest('');
-                        setSelectedGuestId('');
-                      }
-                    }}
-                    onFocus={() => setShowUserDropdown(true)}
-                    icon="lucide:search"
-                  />
-                  
-                  {/* User Dropdown */}
-                  {showUserDropdown && filteredUsers.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                      {filteredUsers.map(user => (
-                        <div
-                          key={user.id}
-                          onClick={() => handleUserSelect(user)}
-                          className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img src={user.profile.avatar} className="w-8 h-8 rounded-full" alt={user.profile.firstName} />
-                            <div className="flex-1">
-                              <p className="text-sm font-bold">{user.profile.firstName} {user.profile.lastName}</p>
-                              <p className="text-xs text-muted-foreground">{user.contact.email}</p>
-                            </div>
+              <div className="space-y-2 relative">
+                <InputField 
+                  label="Search Guest"
+                  placeholder="Type name or email (min 3 chars)..."
+                  value={userSearchQuery || selectedGuest}
+                  onChange={(e) => {
+                    setUserSearchQuery(e.target.value);
+                    if (!e.target.value) {
+                      setSelectedGuest('');
+                      setSelectedGuestId('');
+                    }
+                  }}
+                  onFocus={() => setShowUserDropdown(true)}
+                  icon="lucide:search"
+                />
+                
+                {showUserDropdown && filteredUsers.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {filteredUsers.map(user => (
+                      <div
+                        key={user.id}
+                        onClick={() => handleUserSelect(user)}
+                        className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                            <Icon icon="lucide:user" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold">{user.firstName} {user.lastName}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-end">
-                  <button 
-                    onClick={() => setShowNewGuestModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-sm font-bold text-muted-foreground hover:border-primary hover:text-primary transition-all"
-                  >
-                    <Icon icon="lucide:plus" className="text-lg" />
-                    <span>Add New Guest</span>
-                  </button>
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </FormSection>
 
-            {/* Property Selection */}
             <FormSection title="Property & Dates" icon="lucide:house">
               <div className="space-y-4">
                 <SelectField 
@@ -392,106 +217,27 @@ export default function CreateBooking() {
                   onChange={(e) => setSelectedProperty(e.target.value)}
                 >
                   <option value="">Select a property...</option>
-                  {mockListings.map(listing => (
+                  {properties.map(listing => (
                     <option key={listing.id} value={listing.id}>
-                      {listing.title} - {listing.location.city}, {listing.location.state}
+                      {listing.name} - {listing.city}
                     </option>
                   ))}
                 </SelectField>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Check-in</label>
-                    <div className="bg-card p-4 rounded-xl border border-border">
-                      <div className="flex items-center justify-between mb-4">
-                        <button 
-                          onClick={() => navigateMonth('checkin', 'prev')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <Icon icon="lucide:chevron-left" className="text-lg" />
-                        </button>
-                        <span className="text-sm font-bold text-muted-foreground">
-                          {checkInMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button 
-                          onClick={() => navigateMonth('checkin', 'next')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <Icon icon="lucide:chevron-right" className="text-lg" />
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-7 gap-1 text-center mb-4">
-                        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                          <div key={i} className="text-xs font-bold text-muted-foreground">{day}</div>
-                        ))}
-                      </div>
-                      
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {generateCalendarDays('checkin')}
-                      </div>
-                      
-                      <div className="mt-2 p-2 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 text-xs">
-                          <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                          <span className="text-muted-foreground">Booked</span>
-                          <div className="w-3 h-3 bg-primary rounded-full"></div>
-                          <span className="text-muted-foreground">Selected</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Check-out</label>
-                    <div className="bg-card p-4 rounded-xl border border-border">
-                      <div className="flex items-center justify-between mb-4">
-                        <button 
-                          onClick={() => navigateMonth('checkout', 'prev')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <Icon icon="lucide:chevron-left" className="text-lg" />
-                        </button>
-                        <span className="text-sm font-bold text-muted-foreground">
-                          {checkOutMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button 
-                          onClick={() => navigateMonth('checkout', 'next')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <Icon icon="lucide:chevron-right" className="text-lg" />
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-7 gap-1 text-center mb-4">
-                        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                          <div key={i} className="text-xs font-bold text-muted-foreground">{day}</div>
-                        ))}
-                      </div>
-                      
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {generateCalendarDays('checkout')}
-                      </div>
-                      
-                      <div className="mt-2 p-2 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
-                          <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                          <span className="text-muted-foreground">Booked</span>
-                          <div className="w-3 h-3 bg-primary rounded-full"></div>
-                          <span className="text-muted-foreground">Selected</span>
-                          {checkInDate && (
-                            <>
-                              <div className="w-3 h-3 bg-muted/30 rounded-full border border-border"></div>
-                              <span className="text-muted-foreground">Unavailable</span>
-                            </>
-                          )}
-                        </div>
-                        {checkInDate && (
-                          <p className="text-xs text-muted-foreground text-center mt-1">
-                            Checkout must be after check-in date ({new Date(checkInDate).toLocaleDateString()})
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <InputField 
+                    label="Check-in Date"
+                    type="date"
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                  />
+                  <InputField 
+                    label="Check-out Date"
+                    type="date"
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    min={checkInDate}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -518,17 +264,14 @@ export default function CreateBooking() {
                     value={bookingSource}
                     onChange={(e) => setBookingSource(e.target.value)}
                   >
-                    <option value="">Select source...</option>
                     <option value="direct">Direct Admin Entry</option>
                     <option value="phone">Phone Inquiry</option>
                     <option value="walkin">Walk-in</option>
-                    <option value="partner">Partner Referral</option>
                   </SelectField>
                 </div>
               </div>
             </FormSection>
 
-            {/* Additional Options */}
             <FormSection title="Additional Details" icon="lucide:zap">
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50">
@@ -545,16 +288,12 @@ export default function CreateBooking() {
                       insuranceEnabled ? 'bg-tertiary' : 'bg-muted-foreground/30'
                     }`}
                   >
-                    <div
-                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${
-                        insuranceEnabled ? 'right-1' : 'left-1'
-                      }`}
-                    ></div>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${insuranceEnabled ? 'right-1' : 'left-1'}`}></div>
                   </button>
                 </div>
                 <TextAreaField 
                   label="Special Requests / Notes"
-                  placeholder="Add any specific guest requirements or internal notes here..."
+                  placeholder="Add any specific guest requirements..."
                   value={specialRequests}
                   onChange={(e) => setSpecialRequests(e.target.value)}
                   rows="4"
@@ -563,7 +302,6 @@ export default function CreateBooking() {
             </FormSection>
           </div>
 
-          {/* Right Column: Summary & Actions */}
           <div className="space-y-6">
             <div className="bg-card p-6 rounded-2xl border border-border shadow-lg sticky top-28">
               <h2 className="text-lg font-heading font-bold mb-6">Booking Summary</h2>
@@ -571,24 +309,15 @@ export default function CreateBooking() {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Nightly Rate</span>
-                  <span className="font-bold">{formatCurrency(
-                    mockListings.find(listing => listing.id === selectedProperty)?.price?.nightly || 35000
-                  )} × {checkInDate && checkOutDate ? 
-                    Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Refundable Caution Fee</span>
-                  <span className="font-bold">{formatCurrency(
-                    mockListings.find(listing => listing.id === selectedProperty)?.price?.fees?.caution || 25000
-                  )}</span>
+                  <span className="font-bold">
+                    {formatCurrency(properties.find(p => p.id == selectedProperty)?.pricePerNight || 0)} × {checkInDate && checkOutDate ? Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)) : 0}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">VAT {config.tax.vatRate}%</span>
-                  <span className="font-bold">{formatCurrency(
-                    checkInDate && checkOutDate ? 
-                    Math.round(((mockListings.find(listing => listing.id === selectedProperty)?.price?.nightly || 35000) * 
-                    Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))) * (config.tax.vatRate / 100)) : 0
-                  )}</span>
+                  <span className="font-bold">
+                    {formatCurrency(checkInDate && checkOutDate ? Math.round(((properties.find(p => p.id == selectedProperty)?.pricePerNight || 0) * Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))) * (config.tax.vatRate / 100)) : 0)}
+                  </span>
                 </div>
                 {insuranceEnabled && (
                   <div className="flex justify-between text-sm">
@@ -600,9 +329,7 @@ export default function CreateBooking() {
                   <div className="flex justify-between items-end">
                     <div>
                       <p className="text-xs text-muted-foreground font-bold uppercase">Total Amount</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {formatCurrency(calculateTotal())}
-                      </p>
+                      <p className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal())}</p>
                     </div>
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg font-bold">NGN</span>
                   </div>
@@ -610,112 +337,19 @@ export default function CreateBooking() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                  <Icon icon="lucide:info" className="text-primary shrink-0" />
-                  <p className="text-xs text-primary font-medium">A confirmation email will be sent to guest immediately after booking.</p>
-                </div>
-                <button className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
-                  Create Reservation
-                </button>
-                <button className="w-full py-3.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors">
-                  Save as Draft
+                <button 
+                  onClick={handleConfirm}
+                  disabled={loading}
+                  className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  {loading && <Icon icon="lucide:loader-2" className="animate-spin" />}
+                  {isEditMode ? 'Update Reservation' : 'Create Reservation'}
                 </button>
               </div>
-
-                          </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* New Guest Modal */}
-      {showNewGuestModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold">Add New Guest</h2>
-              <button
-                onClick={() => setShowNewGuestModal(false)}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                <Icon icon="lucide:x" className="text-lg" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">First Name</label>
-                  <input
-                    type="text"
-                    value={newGuest.firstName}
-                    onChange={(e) => setNewGuest({...newGuest, firstName: e.target.value})}
-                    className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                    placeholder="John"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Last Name</label>
-                  <input
-                    type="text"
-                    value={newGuest.lastName}
-                    onChange={(e) => setNewGuest({...newGuest, lastName: e.target.value})}
-                    className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                    placeholder="Doe"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email Address</label>
-                <input
-                  type="email"
-                  value={newGuest.email}
-                  onChange={(e) => setNewGuest({...newGuest, email: e.target.value})}
-                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="john.doe@example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</label>
-                <input
-                  type="tel"
-                  value={newGuest.phone}
-                  onChange={(e) => setNewGuest({...newGuest, phone: e.target.value})}
-                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Location</label>
-                <input
-                  type="text"
-                  value={newGuest.location}
-                  onChange={(e) => setNewGuest({...newGuest, location: e.target.value})}
-                  className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="New York, NY"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowNewGuestModal(false)}
-                className="flex-1 py-3 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateNewGuest}
-                className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
-              >
-                Add Guest
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </PageLayout>
   );
 }

@@ -5,7 +5,7 @@ import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
 import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
-import { mockBookings, getBookingStats } from '../data/mockBookings';
+import { useBookings } from '../hooks/useBookings';
 
 const StatCard = ({ title, value, trend, trendType }) => {
   const trendStyles = {
@@ -28,78 +28,49 @@ const StatCard = ({ title, value, trend, trendType }) => {
   );
 };
 
-const BookingRow = ({ id, guest, listing, location, dates, nights, amount, status, avatar }) => (
-  <tr className="hover:bg-muted/30 transition-colors">
-    <td className="px-6 py-4 text-xs font-bold text-primary">{id}</td>
-    <td className="px-6 py-4">
-      <div className="flex items-center gap-3">
-        <img src={avatar} className="w-8 h-8 rounded-full" alt={guest} />
-        <span className="text-xs font-bold">{guest}</span>
-      </div>
-    </td>
-    <td className="px-6 py-4">
-      <div className="flex flex-col">
-        <span className="text-xs font-bold">{listing}</span>
-        <span className="text-[10px] text-muted-foreground">{location}</span>
-      </div>
-    </td>
-    <td className="px-6 py-4 text-xs">
-      <div className="flex flex-col">
-        <span>{dates}</span>
-        <span className="text-[10px] text-muted-foreground">{nights} Nights</span>
-      </div>
-    </td>
-    <td className="px-6 py-4 text-xs font-bold">{amount}</td>
-    <td className="px-6 py-4">
-      <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-        status === 'Confirmed' ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'
-      }`}>
-        {status}
-      </span>
-    </td>
-    <td className="px-6 py-4 text-right">
-      <Link to="/bookings/edit/BK-9021" className="p-2 hover:bg-muted rounded-lg transition-colors">
-        <Icon icon="lucide:edit" className="text-muted-foreground" />
-      </Link>
-    </td>
-  </tr>
-);
-
 export default function Bookings() {
   const formatCurrency = useFormatCurrency();
   const formatDate = useFormatDate();
+  const { bookings, loading, error } = useBookings();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Calculate stats from mock data
-  const stats = useMemo(() => getBookingStats(), []);
+  // Calculate stats from bookings data
+  const stats = useMemo(() => {
+    const total = bookings.length;
+    const pending = bookings.filter(b => b.status === 'pending').length;
+    const confirmed = bookings.filter(b => b.status === 'confirmed').length;
+    const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+    return { total, pending, confirmed, cancelled };
+  }, [bookings]);
 
   // Filter bookings based on search query
   const filteredBookings = useMemo(() => {
-    if (!searchQuery) return mockBookings;
+    if (!searchQuery) return bookings;
     
-    return mockBookings.filter(booking =>
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.guest.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.listing.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.status.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+    return bookings.filter(booking => {
+      const guestName = `${booking.guestFirstName || booking.User?.firstName || ''} ${booking.guestLastName || booking.User?.lastName || ''}`.toLowerCase();
+      return (
+        String(booking.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        guestName.includes(searchQuery.toLowerCase()) ||
+        (booking.guestEmail || booking.User?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (booking.Property?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (booking.status || '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
+  }, [bookings, searchQuery]);
 
   const exportBookings = () => {
-    // Use actual mock bookings data
     const bookingsData = filteredBookings.map(booking => ({
       id: booking.id,
-      guest: booking.guest.name,
-      email: booking.guest.email,
-      listing: booking.listing.title,
-      location: booking.listing.location,
-      checkIn: booking.dates.checkIn,
-      checkOut: booking.dates.checkOut,
-      nights: booking.dates.nights,
-      amount: formatCurrency(booking.pricing.total),
-      status: booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+      guest: `${booking.guestFirstName || booking.User?.firstName || ''} ${booking.guestLastName || booking.User?.lastName || ''}`.trim(),
+      email: booking.guestEmail || booking.User?.email,
+      listing: booking.Property?.name || 'Unknown',
+      location: booking.Property?.address || 'Unknown',
+      checkIn: formatDate(booking.checkInDate),
+      checkOut: formatDate(booking.checkOutDate),
+      nights: booking.numberOfNights,
+      amount: formatCurrency(booking.totalAmount),
+      status: (booking.status || '').toUpperCase()
     }));
     
     // Create CSV content
@@ -109,12 +80,11 @@ export default function Bookings() {
       ).join('\n')
     }`;
     
-    // Create download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const timestamp = new Date().toISOString().split('T')[0];
     link.download = `bookings-export-${timestamp}.csv`;
     document.body.appendChild(link);
     link.click();
@@ -150,41 +120,55 @@ export default function Bookings() {
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard title="Total Bookings" value={stats.total.toLocaleString()} trend="+8%" trendType="positive" />
+          <StatCard title="Total Bookings" value={stats.total.toLocaleString()} trend="+0%" trendType="neutral" />
           <StatCard title="Pending" value={stats.pending.toLocaleString()} trend="New" trendType="new" />
           <StatCard title="Confirmed" value={stats.confirmed.toLocaleString()} trend="Active" trendType="neutral" />
-          <StatCard title="Cancelled" value={stats.cancelled.toLocaleString()} trend="-2%" trendType="negative" />
+          <StatCard title="Cancelled" value={stats.cancelled.toLocaleString()} trend="0%" trendType="neutral" />
         </div>
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-bold">
+            {error}
+          </div>
+        )}
 
         {/* Bookings Table */}
         <UniversalTable
           headers={['Booking ID', 'Guest', 'Listing', 'Check-in/out', 'Amount', 'Status', 'Actions']}
-          data={filteredBookings.map(booking => ({
+          data={loading ? [] : filteredBookings.map(booking => ({
             col0: booking.id,
             col1: ({ rowIndex }) => (
               <div className="flex items-center gap-3">
-                <img src={booking.guest.avatar} className="w-10 h-10 rounded-full border border-border" alt={booking.guest.name} />
+                <div className="w-10 h-10 rounded-full border border-border bg-muted flex items-center justify-center overflow-hidden">
+                  {booking.User?.avatar ? (
+                    <img src={booking.User.avatar} className="w-full h-full object-cover" alt="guest" />
+                  ) : (
+                    <Icon icon="lucide:user" className="text-muted-foreground text-xl" />
+                  )}
+                </div>
                 <div>
-                  <p className="text-sm font-bold">{booking.guest.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{booking.guest.email}</p>
+                  <p className="text-sm font-bold">
+                    {`${booking.guestFirstName || booking.User?.firstName || ''} ${booking.guestLastName || booking.User?.lastName || ''}`.trim()}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{booking.guestEmail || booking.User?.email}</p>
                 </div>
               </div>
             ),
             col2: (
               <div>
-                <p className="text-sm font-bold">{booking.listing.title}</p>
-                <p className="text-[10px] text-muted-foreground">{booking.listing.location}</p>
+                <p className="text-sm font-bold">{booking.Property?.name || 'Unknown'}</p>
+                <p className="text-[10px] text-muted-foreground">{booking.Property?.address || 'Unknown'}</p>
               </div>
             ),
-            col3: `${formatDate(booking.dates.checkIn)} - ${formatDate(booking.dates.checkOut)}`,
-            col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(booking.pricing.total)}</span>,
+            col3: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
+            col4: <span className="text-sm font-bold text-tertiary">{formatCurrency(booking.totalAmount)}</span>,
             col5: (
               <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
                 booking.status === 'confirmed' ? 'bg-tertiary/10 text-tertiary' : 
                 booking.status === 'pending' ? 'bg-primary/10 text-primary' : 
                 'bg-destructive/10 text-destructive'
               }`}>
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                {booking.status}
               </span>
             ),
             col6: (
@@ -203,9 +187,11 @@ export default function Bookings() {
           onExport={exportBookings}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          mobileColumns={[0, 1, 5]} // Show Booking ID, Guest, and Status on mobile
+          mobileColumns={[0, 1, 5]} 
+          loading={loading}
         />
       </div>
     </PageLayout>
   );
 }
+

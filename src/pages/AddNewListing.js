@@ -1,29 +1,60 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
-import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup } from '../components/ListingForm';
+import { FormSection, InputField, SelectField, TextAreaField, CheckboxGroup, FileField } from '../components/ListingForm';
 import { useFormatCurrency, useAppConfig } from '../config/useAppConfig';
+import { useListingForm } from '../hooks/useListingForm';
 
 export default function AddNewListing() {
-  const { config, booking } = useAppConfig();
-  const formatCurrency = useFormatCurrency();
+  const { config } = useAppConfig();
+  const navigate = useNavigate();
   
-    const [currentStep, setCurrentStep] = useState(1);
-  const [status, setStatus] = useState('publish');
-  const [seasonalPricing, setSeasonalPricing] = useState([
-    {
-      id: 1,
-      name: '',
-      rate: '',
-      startDate: '',
-      endDate: ''
+  const { 
+    formData, 
+    loading, 
+    error, 
+    setError,
+    handleChange, 
+    handleSelectChange, 
+    handleCheckboxChange, 
+    handleFileChange,
+    handleSubmit,
+    selectedFiles
+  } = useListingForm();
+
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const validateStep = () => {
+    setError(null);
+    switch (currentStep) {
+      case 1:
+        const requiredFields = ['name', 'pricePerNight', 'address', 'city'];
+        const missing = requiredFields.filter(f => !formData[f]);
+        if (missing.length > 0) {
+          setError(`Please fill in all required fields: ${missing.join(', ')}`);
+          return false;
+        }
+        return true;
+      case 2:
+        if (selectedFiles.length === 0 && formData.images.length === 0) {
+          setError('Please upload at least one photo of your property.');
+          return false;
+        }
+        return true;
+      default:
+        return true;
     }
-  ]);
+  };
 
   const nextStep = () => {
-    if (currentStep < 6) {
-      setCurrentStep(currentStep + 1);
+    if (validateStep()) {
+      if (currentStep < 6) {
+        setCurrentStep(currentStep + 1);
+        window.scrollTo(0, 0);
+      } else {
+        handlePublish();
+      }
     }
   };
 
@@ -33,29 +64,11 @@ export default function AddNewListing() {
     }
   };
 
-  const addSeasonalPricing = () => {
-    setSeasonalPricing([
-      ...seasonalPricing,
-      {
-        id: Date.now(),
-        name: '',
-        rate: '',
-        startDate: '',
-        endDate: ''
-      }
-    ]);
-  };
-
-  const removeSeasonalPricing = (id) => {
-    if (seasonalPricing.length > 1) {
-      setSeasonalPricing(seasonalPricing.filter(item => item.id !== id));
+  const handlePublish = async () => {
+    const result = await handleSubmit();
+    if (result) {
+      navigate('/listings');
     }
-  };
-
-  const updateSeasonalPricing = (id, field, value) => {
-    setSeasonalPricing(seasonalPricing.map(item =>
-      item.id === id ? { ...item, [field]: value } : item
-    ));
   };
 
   const getStepTitle = () => {
@@ -77,39 +90,103 @@ export default function AddNewListing() {
           <>
             <FormSection title="Property Details" icon="lucide:info">
               <div className="space-y-4">
-                <InputField label="Listing Title" placeholder="e.g. Modern Downtown Loft" />
+                <InputField 
+                  label="Listing Title" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="e.g. Modern Downtown Loft" 
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <SelectField label="Property Type">
-                    <option>Apartment</option>
-                    <option>House</option>
-                    <option>Villa</option>
-                    <option>Cabin</option>
+                  <SelectField 
+                    label="Property Type"
+                    name="type"
+                    value={formData.type}
+                    onChange={(e) => handleSelectChange('type', e.target.value)}
+                  >
+                    <option value="Apartment">Apartment</option>
+                    <option value="House">House</option>
+                    <option value="Villa">Villa</option>
+                    <option value="Cabin">Cabin</option>
                   </SelectField>
-                  <InputField label="Base Price (Nightly)" placeholder="0.00" type="number" prefix={config.currency.symbol} />
+                  <InputField 
+                    label="Base Price (Nightly)" 
+                    name="pricePerNight"
+                    value={formData.pricePerNight}
+                    onChange={handleChange}
+                    placeholder="0.00" 
+                    type="number" 
+                    prefix={config.currency.symbol} 
+                  />
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  <InputField label="Max Guests" placeholder="2" type="number" />
-                  <InputField label="Bedrooms" placeholder="1" type="number" />
-                  <InputField label="Bathrooms" placeholder="1" type="number" />
+                  <InputField 
+                    label="Max Guests" 
+                    name="maxGuests"
+                    value={formData.maxGuests}
+                    onChange={handleChange}
+                    placeholder="2" 
+                    type="number" 
+                  />
+                  <InputField 
+                    label="Bedrooms" 
+                    name="bedrooms"
+                    value={formData.bedrooms}
+                    onChange={handleChange}
+                    placeholder="1" 
+                    type="number" 
+                  />
+                  <InputField 
+                    label="Bathrooms" 
+                    name="bathrooms"
+                    value={formData.bathrooms}
+                    onChange={handleChange}
+                    placeholder="1" 
+                    type="number" 
+                  />
                 </div>
 
-                <TextAreaField label="Description" placeholder="Describe the unique features of your property..." rows="4" />
+                <TextAreaField 
+                  label="Description" 
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Describe the unique features of your property..." 
+                  rows="4" 
+                />
               </div>
             </FormSection>
 
             <FormSection title="Location" icon="lucide:map-pin">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <InputField label="Street Address" placeholder="123 Luxury Ave" />
+                  <InputField 
+                    label="Street Address" 
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="123 Luxury Ave" 
+                  />
                 </div>
-                <InputField label="City" placeholder="New York" />
-                <SelectField label="Country">
-                  <option>United States</option>
-                  <option>United Kingdom</option>
-                  <option>Canada</option>
-                  <option>France</option>
+                <InputField 
+                  label="City" 
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="Lagos" 
+                />
+                <SelectField 
+                  label="Country"
+                  name="country"
+                  value={formData.country}
+                  onChange={(e) => handleSelectChange('country', e.target.value)}
+                >
+                  <option value="Nigeria">Nigeria</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
                 </SelectField>
               </div>
             </FormSection>
@@ -120,29 +197,44 @@ export default function AddNewListing() {
         return (
           <FormSection title="Media & Gallery" icon="lucide:image">
             <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 block">Cover Photo</label>
-                <div className="relative group cursor-pointer">
-                  <div className="aspect-video bg-muted rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all">
-                    <Icon icon="lucide:upload-cloud" className="text-4xl text-muted-foreground group-hover:text-primary transition-colors" />
-                    <p className="text-xs font-black uppercase mt-2 text-muted-foreground group-hover:text-primary">Click to upload</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG up to 10MB</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 block">Gallery Photos</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((index) => (
-                    <div key={index} className="relative group">
-                      <div className="w-full h-32 bg-muted rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center">
-                        <Icon icon="lucide:plus" className="text-2xl text-muted-foreground mb-2" />
-                        <span className="text-xs text-muted-foreground">Add Photo</span>
+              <FileField 
+                label="Property Photos" 
+                onChange={handleFileChange}
+                loading={loading}
+              />
+              
+              {selectedFiles.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  {selectedFiles.map((file, idx) => (
+                    <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-muted border border-border">
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={`Selected ${idx}`} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <p className="text-[10px] text-white font-bold truncate px-2">{file.name}</p>
                       </div>
                     </div>
                   ))}
                 </div>
+              )}
+              
+              {selectedFiles.length === 0 && formData.images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  {formData.images.map((url, idx) => (
+                    <div key={idx} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border">
+                      <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-start gap-3">
+                <Icon icon="lucide:info" className="text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-primary/80 leading-relaxed">
+                  High-quality photos increase your booking rate by up to 40%. Upload at least 5 photos for best results.
+                </p>
               </div>
             </div>
           </FormSection>
@@ -154,19 +246,15 @@ export default function AddNewListing() {
             <CheckboxGroup 
               title="Essential Amenities"
               items={['Wi-Fi', 'Kitchen', 'Free Parking', 'Washer', 'TV', 'Air Conditioning']}
-              defaultChecked={['Wi-Fi', 'Kitchen', 'Free Parking', 'TV', 'Air Conditioning']}
+              selectedItems={formData.amenities}
+              onChange={(item) => handleCheckboxChange('amenities', item)}
             />
             
             <CheckboxGroup 
               title="Special Features"
               items={['Pool', 'Hot Tub', 'Gym', 'Workspace', 'Beach Access', 'Mountain View']}
-              defaultChecked={['Pool', 'Workspace']}
-            />
-            
-            <CheckboxGroup 
-              title="Additional Amenities"
-              items={['Smoke Detector', 'First Aid Kit', 'Fire Extinguisher', 'Carbon Monoxide Detector', 'Baby Monitor']}
-              defaultChecked={[]}
+              selectedItems={formData.amenities}
+              onChange={(item) => handleCheckboxChange('amenities', item)}
             />
           </FormSection>
         );
@@ -176,84 +264,17 @@ export default function AddNewListing() {
           <FormSection title="Pricing Rules" icon="lucide:calendar">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputField label="Weekend Rate" type="number" defaultValue="150" prefix={config.currency.symbol} />
-                <InputField label="Weekly Discount" type="number" defaultValue="15" />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold">Seasonal Pricing</h3>
-                  <button
-                    onClick={addSeasonalPricing}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
-                  >
-                    <Icon icon="lucide:plus" className="text-lg" />
-                    Add Season
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {seasonalPricing.map((item, index) => (
-                    <div key={item.id} className="p-4 bg-muted/50 rounded-xl">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-bold text-muted-foreground">
-                          Season {index + 1}
-                        </span>
-                        {seasonalPricing.length > 1 && (
-                          <button
-                            onClick={() => removeSeasonalPricing(item.id)}
-                            className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
-                          >
-                            <Icon icon="lucide:trash-2" className="text-lg" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Season Name</label>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => updateSeasonalPricing(item.id, 'name', e.target.value)}
-                            placeholder="e.g., Summer Season"
-                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rate</label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{config.currency.symbol}</span>
-                            <input
-                              type="number"
-                              value={item.rate}
-                              onChange={(e) => updateSeasonalPricing(item.id, 'rate', e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-8 pr-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Start Date</label>
-                          <input
-                            type="date"
-                            value={item.startDate}
-                            onChange={(e) => updateSeasonalPricing(item.id, 'startDate', e.target.value)}
-                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">End Date</label>
-                          <input
-                            type="date"
-                            value={item.endDate}
-                            onChange={(e) => updateSeasonalPricing(item.id, 'endDate', e.target.value)}
-                            min={item.startDate}
-                            className="w-full px-4 py-3 bg-muted border border-transparent rounded-xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <InputField 
+                  label="Weekend Rate" 
+                  type="number" 
+                  defaultValue="150" 
+                  prefix={config.currency.symbol} 
+                />
+                <InputField 
+                  label="Weekly Discount" 
+                  type="number" 
+                  defaultValue="15" 
+                />
               </div>
 
               <div className="space-y-4">
@@ -271,7 +292,6 @@ export default function AddNewListing() {
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">%</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Applied to nightly rate only (Fixed rate)</p>
                   </div>
                 </div>
               </div>
@@ -291,8 +311,7 @@ export default function AddNewListing() {
                     'No parties or events',
                     'No pets (unless specified)',
                     'Check-in after 3:00 PM',
-                    'Check-out before 11:00 AM',
-                    'Quiet hours: 10 PM - 7 AM'
+                    'Check-out before 11:00 AM'
                   ].map((rule) => (
                     <div key={rule} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
                       <Icon icon="lucide:check-circle" className="text-tertiary" />
@@ -302,25 +321,10 @@ export default function AddNewListing() {
                 </div>
               </div>
 
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cancellation Policy</label>
-                      <select className="w-full px-4 py-3 bg-card border border-border rounded-xl text-muted-foreground cursor-not-allowed outline-none" value={booking.cancellationPolicy} disabled readOnly>
-                        {booking.cancellationOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                <InputField label="Security Deposit" type="number" defaultValue="200" prefix={config.currency.symbol} />
-              </div> */}
-
               <TextAreaField 
                 label="Additional Rules" 
                 placeholder="Add any additional house rules or policies..."
                 rows="4" 
-                defaultValue="Guests must respect neighbors and keep noise levels down. No unauthorized guests allowed. Please report any damages immediately."
               />
             </div>
           </FormSection>
@@ -332,22 +336,25 @@ export default function AddNewListing() {
             <div className="space-y-6">
               <div className="bg-tertiary/10 p-6 rounded-xl border border-tertiary/20">
                 <h3 className="text-lg font-bold mb-4">Review Your Listing</h3>
-                <div className="space-y-4">
-                  {[
-                    'Basic information completed',
-                    'Media uploaded',
-                    'Amenities configured',
-                    'Pricing rules set',
-                    'Policies defined',
-                    'Ready to publish'
-                  ].map((item) => (
-                    <div key={item} className="flex items-center gap-3">
-                      <Icon icon="lucide:check" className="text-tertiary" />
-                      <span className="text-sm">{item}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Title</p>
+                    <p className="font-bold">{formData.name || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Price</p>
+                    <p className="font-bold">{config.currency.symbol}{formData.pricePerNight || '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Location</p>
+                    <p className="font-bold">{formData.city || 'Not set'}, {formData.country}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Status</p>
+                    <p className="font-bold uppercase text-tertiary">{formData.status}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-sm text-muted-foreground">
                   Your listing will be live once published. Make sure all information is accurate before proceeding.
                 </p>
               </div>
@@ -376,19 +383,17 @@ export default function AddNewListing() {
         <div className="flex items-center gap-3">
           <button 
             onClick={prevStep}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || loading}
             className="px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-muted transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous Step
           </button>
-          <button className="px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-muted transition-all active:scale-95 uppercase tracking-widest">
-            Save Draft
-          </button>
           <button 
             onClick={nextStep}
-            disabled={currentStep === 6}
-            className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+            className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {loading && <Icon icon="lucide:loader-2" className="animate-spin" />}
             {currentStep === 6 ? 'Publish Listing' : 'Next Step'}
           </button>
         </div>
@@ -397,9 +402,16 @@ export default function AddNewListing() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
         <div className="max-w-4xl mx-auto">
+          {error && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+              <Icon icon="lucide:alert-circle" className="text-destructive text-xl shrink-0" />
+              <p className="text-sm font-bold text-destructive">{error}</p>
+            </div>
+          )}
           {renderStepContent()}
         </div>
       </div>
     </PageLayout>
   );
 }
+

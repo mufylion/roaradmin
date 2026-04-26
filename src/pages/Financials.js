@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
@@ -16,10 +16,8 @@ import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import UniversalTable from '../components/UniversalTable';
 import TimePeriodFilter from '../components/TimePeriodFilter';
-import { useFormatCurrency, useFormatDate, DEFAULT_CONFIG } from '../config/useAppConfig';
-import { mockFinancials } from '../data/mockFinancials';
-import { mockBookings } from '../data/mockBookings';
-import { useTimeBasedData } from '../hooks/useTimeBasedData';
+import { useFormatCurrency, useFormatDate } from '../config/useAppConfig';
+import financialsService from '../services/financialsService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -48,308 +46,131 @@ const StatCard = ({ title, value, trend, trendType, icon }) => {
   );
 };
 
-const TransactionRow = ({ id, date, category, description, amount, status }) => {
-  const downloadTransaction = () => {
-    // Create transaction data for export
-    const transactionData = {
-      id,
-      date,
-      category,
-      description,
-      amount,
-      status,
-      exportDate: new Date().toISOString()
-    };
-    
-    // Convert to CSV format
-    const csvContent = `Transaction ID,Date,Category,Description,Amount,Status\n${id},"${date}","${category}","${description}","${amount}","${status}"`;
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `transaction-${id.substring(1)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
-
-  return (
-    <tr className="hover:bg-muted/30 transition-colors">
-      <td className="px-6 py-4 text-xs font-bold text-primary">{id}</td>
-      <td className="px-6 py-4 text-xs">{date}</td>
-      <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-          category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
-        }`}>
-          {category}
-        </span>
-      </td>
-      <td className="px-6 py-4 text-xs">{description}</td>
-      <td className={`px-6 py-4 text-xs font-bold ${
-        category === 'Income' ? 'text-tertiary' : 'text-destructive'
-      }`}>
-        {category === 'Income' ? '+' : '-'}{amount}
-      </td>
-      <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-          status === 'Completed' ? 'bg-tertiary/10 text-tertiary' : 
-          status === 'Pending' ? 'bg-primary/10 text-primary' : 
-          'bg-muted text-muted-foreground'
-        }`}>
-          {status}
-        </span>
-      </td>
-      <td className="px-6 py-4 text-right">
-        <div className="flex items-center gap-2 justify-end">
-          {category === 'Expense' && (
-            <Link 
-              to={`/financials/edit-expense/${id.substring(1)}`}
-              className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-              aria-label="Edit expense"
-            >
-              <Icon icon="lucide:edit" className="text-muted-foreground" />
-            </Link>
-          )}
-          <button 
-            onClick={downloadTransaction}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
-            aria-label="Download transaction"
-          >
-            <Icon icon="lucide:download" className="text-muted-foreground" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-};
-
 export default function Financials() {
   const formatCurrency = useFormatCurrency();
   const formatDate = useFormatDate();
   const [activeFilter, setActiveFilter] = useState('All');
-  const [timePeriod, setTimePeriod] = useState('This Month');
+  const [timePeriod, setTimePeriod] = useState('This Year');
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const downloadReport = () => {
-    // Filter transactions based on active filter
-    const transactionsToExport = filteredTransactions;
-    
-    // Create CSV content for all transactions
-    const csvContent = `Transaction ID,Date,Category,Description,Amount,Status\n${
-      transactionsToExport.map(transaction => 
-        `${transaction.id},"${transaction.date}","${transaction.category}","${transaction.description}","${transaction.amount}","${transaction.status}"`
-      ).join('\n')
-    }`;
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    link.download = `financial-report-${activeFilter}-${timestamp}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
-
-  // Use reusable time-based data hook
-  const timeBasedData = useTimeBasedData(timePeriod, mockBookings);
-
-  
-  // Use mock transactions data with time period filtering
-  const transactions = useMemo(() => {
-    let allTransactions = mockFinancials.transactions;
-    
-    // Filter transactions based on time period
-    if (timePeriod !== 'This Year') {
-      const currentYear = new Date().getFullYear();
-      const currentYearTransactions = allTransactions.filter(t => 
-        new Date(t.date).getFullYear() === currentYear
-      );
-      
-      if (timePeriod === 'This Week' || timePeriod === 'This Month') {
-        const currentMonth = new Date().getMonth();
-        allTransactions = currentYearTransactions.filter(t => 
-          new Date(t.date).getMonth() === currentMonth
-        );
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const data = await financialsService.fetchStats(timePeriod);
+        setStats(data);
+      } catch (err) {
+        console.error('Failed to fetch financials:', err);
+      } finally {
+        setLoading(false);
       }
-    }
-    
-    return allTransactions.map(transaction => ({
-      ...transaction,
-      date: formatDate(transaction.date),
-      amount: formatCurrency(transaction.amount),
-      status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
-    }));
+    };
+    fetchStats();
   }, [timePeriod]);
 
-  // Filter transactions based on active filter
-  const filteredTransactions = transactions.filter(transaction => {
-    if (activeFilter === 'All') return true;
-    if (activeFilter === 'Income') return transaction.category === 'Income';
-    if (activeFilter === 'Expenses') return transaction.category === 'Expense';
-    return true;
-  });
+  const transactions = useMemo(() => {
+    if (!stats) return [];
+    return stats.transactions.map(t => ({
+      ...t,
+      displayDate: formatDate(t.date),
+      displayAmount: formatCurrency(t.amount),
+      displayStatus: t.status.charAt(0).toUpperCase() + t.status.slice(1)
+    }));
+  }, [stats, formatDate, formatCurrency]);
 
-  // Chart Data
-  const barData = {
-    labels: timeBasedData.labels,
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (activeFilter === 'All') return true;
+      if (activeFilter === 'Income') return t.category === 'Income';
+      if (activeFilter === 'Expenses') return t.category === 'Expense';
+      return true;
+    });
+  }, [transactions, activeFilter]);
+
+  const barData = useMemo(() => ({
+    labels: stats?.chartData?.labels || [],
     datasets: [
       {
         label: 'Revenue',
-        data: timeBasedData.revenueData,
+        data: stats?.chartData?.revenue || [],
         backgroundColor: '#2563eb',
         borderRadius: 6,
       },
       {
         label: 'Expenses',
-        data: timeBasedData.expenseData,
+        data: stats?.chartData?.expenses || [],
         backgroundColor: '#e2e8f0',
         borderRadius: 6,
       },
     ],
-  };
+  }), [stats]);
 
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { boxWidth: 10, font: { size: 10 } },
-      },
-    },
-    scales: {
-      y: { 
-        grid: { display: false }, 
-        ticks: { font: { size: 10 } } 
-      },
-      x: { 
-        grid: { display: false }, 
-        ticks: { font: { size: 10 } } 
-      },
-    },
-  };
-
-  // Calculate dynamic expense categories from time-filtered transactions
-  const expenseCategories = useMemo(() => {
-    const expenseTransactions = transactions.filter(t => t.category === 'Expenses');
-    const categories = {};
-    
-    // Default categories that should always be shown
-    const defaultCategories = {
-      'Platform Fees': 0,
-      'Maintenance': 0,
-      'Marketing': 0,
-      'Utilities': 0,
-      'Staff Costs': 0,
-      'Other': 0
-    };
-    
-    // Group expenses by sub-category
-    expenseTransactions.forEach(transaction => {
-      // Extract category from description (e.g., "Platform subscription fee" -> "Platform Fees")
-      let category = 'Other';
-      if (transaction.description.includes('subscription')) {
-        category = 'Platform Fees';
-      } else if (transaction.description.includes('maintenance')) {
-        category = 'Maintenance';
-      } else if (transaction.description.includes('marketing') || transaction.description.includes('advertising')) {
-        category = 'Marketing';
-      } else if (transaction.description.includes('utilities') || transaction.description.includes('electricity') || transaction.description.includes('water')) {
-        category = 'Utilities';
-      } else if (transaction.description.includes('staff') || transaction.description.includes('salary')) {
-        category = 'Staff Costs';
-      }
-      
-      if (!categories[category]) {
-        categories[category] = 0;
-      }
-      categories[category] += parseFloat(transaction.amount.replace(/[^0-9.-]/g, ''));
-    });
-    
-    // Merge with default categories to ensure all categories are shown
-    const mergedCategories = { ...defaultCategories, ...categories };
-    
-    // Convert to percentages
-    const total = Object.values(mergedCategories).reduce((sum, amount) => sum + amount, 0);
-    
-    return Object.entries(mergedCategories).map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: total > 0 ? Math.round((amount / total) * 100) : 0
-    })).sort((a, b) => b.amount - a.amount);
-  }, [transactions]);
-
-  const doughnutData = {
-    labels: expenseCategories.map(item => item.category),
+  const doughnutData = useMemo(() => ({
+    labels: stats?.categoryBreakdown?.labels || [],
     datasets: [
       {
-        data: expenseCategories.map(item => item.percentage || 0.1), // Ensure minimum value for rendering
+        data: stats?.categoryBreakdown?.data || [],
         backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
         borderWidth: 0,
       },
     ],
+  }), [stats]);
+
+  if (loading) return (
+    <PageLayout>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    </PageLayout>
+  );
+
+  const handleDownloadReport = () => {
+    if (!transactions.length) return;
+    
+    const headers = ['Transaction ID', 'Date', 'Category', 'Type', 'Description', 'Amount', 'Status'];
+    const csvRows = [
+      headers.join(','),
+      ...transactions.map(t => [
+        t.id,
+        t.date,
+        t.category,
+        t.type || 'N/A',
+        `"${t.description.replace(/"/g, '""')}"`,
+        t.amount,
+        t.status
+      ].join(','))
+    ];
+    
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `roar_financial_report_${timePeriod.toLowerCase().replace(' ', '_')}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
-  // Use timeBasedData for dynamic summary (already calculated in hook)
-
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '70%',
-    plugins: {
-      legend: {
-        position: 'right',
-        labels: { boxWidth: 10, font: { size: 10 } },
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const value = expenseCategories[context.dataIndex];
-            if (value.amount > 0) {
-              return `${value.category}: ${formatCurrency(value.amount)} (${value.percentage}%)`;
-            } else {
-              return `${value.category}: ${formatCurrency(0)} (0%)`;
-            }
-          }
-        }
-      }
-    },
-    elements: {
-      arc: {
-        borderWidth: 0
-      }
-    }
-  };
+  const summary = stats?.summary || { totalRevenue: 0, totalExpenses: 0, netProfit: 0, monthlyGrowth: 0 };
 
   return (
     <PageLayout>
       <PageHeader
         title="Financials & Expenses"
         description="Track revenue, monitor operational costs, and manage payouts."
-        customContent={
-          <TimePeriodFilter 
-            value={timePeriod}
-            onChange={setTimePeriod}
-          />
-        }
+        customContent={<TimePeriodFilter value={timePeriod} onChange={setTimePeriod} />}
         actions={[
           {
             type: 'button',
             label: 'Download Report',
-            shortLabel: 'Report',
             icon: 'lucide:download',
-            onClick: downloadReport
+            onClick: handleDownloadReport
           },
           {
             type: 'link',
             label: 'Record Expense',
-            shortLabel: 'Expense',
             icon: 'lucide:plus',
             to: '/financials/record-expense',
             variant: 'primary'
@@ -357,63 +178,44 @@ export default function Financials() {
         ]}
       />
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
-        {/* Financial Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
             title="Gross Revenue" 
-            value={formatCurrency(timeBasedData.totalRevenue)}
-            trend={timeBasedData.monthlyGrowth > 0 ? `+${timeBasedData.monthlyGrowth}% vs last month` : "No activity this period"} 
-            trendType={timeBasedData.monthlyGrowth > 0 ? "up" : "neutral"} 
+            value={formatCurrency(summary.totalRevenue)}
+            trend={`+${summary.monthlyGrowth}% vs last month`} 
+            trendType="up" 
           />
           <StatCard 
             title="Total Expenses" 
-            value={formatCurrency(timeBasedData.totalExpenses)}
-            trend={timeBasedData.totalExpenses > 0 ? `+${(timeBasedData.monthlyGrowth * 0.3).toFixed(1)}% vs last month` : "No expenses this period"} 
-            trendType="down" 
+            value={formatCurrency(summary.totalExpenses)}
+            trend="Stable" 
+            trendType="neutral" 
           />
           <StatCard 
             title="Net Profit" 
-            value={formatCurrency(timeBasedData.netProfit)}
-            trend={timeBasedData.netProfit > 0 ? `+${timeBasedData.monthlyGrowth}% vs last month` : "No profit this period"} 
-            trendType={timeBasedData.netProfit > 0 ? "up" : "neutral"} 
+            value={formatCurrency(summary.netProfit)}
+            trend="Upward trend" 
+            trendType="up" 
           />
         </div>
 
-        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
             <h2 className="text-lg font-heading font-bold mb-6">Revenue vs Expenses</h2>
             <div className="h-64">
-              <Bar data={barData} options={barOptions} />
+              <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
             </div>
           </div>
           <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
             <h2 className="text-lg font-heading font-bold mb-6">Expense Breakdown</h2>
             <div className="h-64 flex items-center justify-center">
-              <Doughnut data={doughnutData} options={doughnutOptions} />
+              <Doughnut data={doughnutData} options={{ responsive: true, maintainAspectRatio: false, cutout: '70%' }} />
             </div>
           </div>
         </div>
 
-        {/* Recent Transactions */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-border">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">Recent Transactions</h2>
-                <p className="text-sm text-muted-foreground">Latest financial activities and expense records.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2.5 bg-muted rounded-xl hover:bg-muted/80 transition-colors">
-                  <Icon icon="lucide:filter" className="text-lg text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Filter Tabs */}
           <div className="px-4 md:px-6 py-4 border-b border-border">
             <div className="flex flex-wrap gap-2">
               {['All', 'Income', 'Expenses'].map((filter) => (
@@ -421,9 +223,7 @@ export default function Financials() {
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
                   className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                    activeFilter === filter
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:bg-muted/50'
+                    activeFilter === filter ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'
                   }`}
                 >
                   {filter}
@@ -433,60 +233,36 @@ export default function Financials() {
           </div>
           
           <UniversalTable
-            headers={['Transaction ID', 'Date', 'Category', 'Description', 'Amount', 'Status', 'Action']}
-            data={filteredTransactions.map((transaction) => ({
-              col0: transaction.id,
-              col1: transaction.date,
+            headers={['Transaction ID', 'Date', 'Category', 'Description', 'Amount', 'Status']}
+            data={filteredTransactions.map((t) => ({
+              col0: t.id,
+              col1: t.displayDate,
               col2: (
                 <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${
-                  transaction.category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
+                  t.category === 'Income' ? 'bg-tertiary/10 text-tertiary' : 'bg-destructive/10 text-destructive'
                 }`}>
-                  {transaction.category}
+                  {t.category}
                 </span>
               ),
-              col3: transaction.description,
+              col3: t.description,
               col4: (
-                <span className={`text-sm font-bold ${
-                  transaction.category === 'Income' ? 'text-tertiary' : 'text-destructive'
-                }`}>
-                  {transaction.amount}
+                <span className={`text-sm font-bold ${t.category === 'Income' ? 'text-tertiary' : 'text-destructive'}`}>
+                  {t.displayAmount}
                 </span>
               ),
               col5: (
                 <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-                  transaction.status === 'Completed' ? 'bg-tertiary/10 text-tertiary' : 'bg-muted text-muted-foreground'
+                  t.status === 'completed' ? 'bg-tertiary/10 text-tertiary' : 'bg-muted text-muted-foreground'
                 }`}>
-                  {transaction.status}
+                  {t.displayStatus}
                 </span>
-              ),
-              col6: (
-                <div className="flex items-center gap-2 justify-end">
-                  <button 
-                    onClick={() => downloadTransaction(transaction)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    aria-label="Download transaction"
-                  >
-                    <Icon icon="lucide:download" className="text-muted-foreground" />
-                  </button>
-                  <Link 
-                    to={`/financials/edit-transaction/${transaction.id.substring(1)}`}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    aria-label="Edit transaction"
-                  >
-                    <Icon icon="lucide:edit" className="text-muted-foreground" />
-                  </Link>
-                </div>
               )
             }))}
-            searchPlaceholder="Search transactions..."
-            filterButton={true}
-            exportButton={true}
-            onExport={downloadReport}
-            mobileColumns={[0, 2, 4]} // Transaction ID, Category, Amount on mobile
+            loading={loading}
             emptyMessage={`No ${activeFilter === 'All' ? 'transactions' : activeFilter.toLowerCase()} found`}
           />
         </div>
       </div>
     </PageLayout>
   );
-};
+}

@@ -1,193 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
-import { FormSection, InputField, SelectField, TextAreaField } from '../components/ListingForm';
-import { getUserById, mockUsers } from '../data/mockUsers';
+import { FormSection, InputField, TextAreaField } from '../components/ListingForm';
+import { useUserForm } from '../hooks/useUserForm';
+import usersService from '../services/usersService';
 
 export default function AddNewUser() {
   const { id } = useParams();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('guest');
-  const [verified, setVerified] = useState(true);
-  const [sendEmail, setSendEmail] = useState(true);
-  const [internalNotes, setInternalNotes] = useState('');
-  const [profilePicture, setProfilePicture] = useState('');
-  const [uploadError, setUploadError] = useState('');
-  const [dataVersion, setDataVersion] = useState(0); // Force re-render
-  
+  const navigate = useNavigate();
   const isEditMode = Boolean(id);
   const pageTitle = isEditMode ? 'Edit User' : 'Add New User';
+
+  const {
+    formData,
+    setFormData,
+    loading,
+    error,
+    handleChange,
+    handleSelectChange,
+    handleSubmit
+  } = useUserForm();
+
+  const [fetchLoading, setFetchLoading] = useState(isEditMode);
 
   // Load user data for edit mode
   useEffect(() => {
     if (isEditMode) {
-      // Get user data from mock users
-      const userData = getUserById(id);
-      if (userData) {
-        setFirstName(userData.profile.firstName);
-        setLastName(userData.profile.lastName);
-        setEmail(userData.contact.email);
-        setPhone(userData.contact.phone);
-        setRole(userData.role);
-        setVerified(userData.verification.email && userData.verification.phone);
-        setSendEmail(userData.preferences.notifications.email);
-        setInternalNotes(userData.profile.bio || '');
-        setProfilePicture(userData.profile.avatar);
-      }
+      const fetchUser = async () => {
+        setFetchLoading(true);
+        try {
+          const data = await usersService.fetchUserById(id);
+          setFormData({
+            firstName: data.profile?.firstName || '',
+            lastName: data.profile?.lastName || '',
+            email: data.contact?.email || '',
+            phone: data.contact?.phone || '',
+            role: data.role || 'guest',
+            status: data.status || 'active',
+            bio: data.profile?.bio || '',
+            avatar: data.profile?.avatar || ''
+          });
+        } catch (err) {
+          console.error('Failed to fetch user:', err);
+        } finally {
+          setFetchLoading(false);
+        }
+      };
+      fetchUser();
     }
-  }, [id, isEditMode]);
+  }, [id, isEditMode, setFormData]);
+
+  const onFormSubmit = async (e) => {
+    e.preventDefault();
+    const result = await handleSubmit(isEditMode, id);
+    if (result) {
+      navigate(isEditMode ? `/users/profile/${id}` : '/users');
+    }
+  };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Only JPEG and PNG files are allowed');
-      return;
-    }
-
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      alert('File size must be less than 5MB');
-      return;
-    }
-
-    // Create file reader to preview the image
+    
+    // In a real app, you'd upload this to a server
+    // For now, we'll use a file reader preview
     const reader = new FileReader();
     reader.onload = (event) => {
-      setProfilePicture(event.target.result);
+      handleSelectChange('avatar', event.target.result);
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('=== FORM SUBMISSION TRIGGERED ===');
-    console.log('Event type:', e.type);
-    console.log('Current form data:', { firstName, lastName, email, phone, role, verified, sendEmail, internalNotes, profilePicture });
-    
-    if (isEditMode) {
-      // Find the user in mockUsers
-      const userIndex = mockUsers.findIndex(user => user.id === id);
-      if (userIndex !== -1) {
-        // Update the user data
-        mockUsers[userIndex] = {
-          ...mockUsers[userIndex],
-          profile: {
-            ...mockUsers[userIndex].profile,
-            firstName,
-            lastName,
-            avatar: profilePicture || mockUsers[userIndex].profile.avatar,
-            bio: internalNotes || mockUsers[userIndex].profile.bio
-          },
-          contact: {
-            ...mockUsers[userIndex].contact,
-            email,
-            phone,
-            whatsapp: phone
-          },
-          verification: {
-            ...mockUsers[userIndex].verification,
-            email: verified,
-            phone: verified
-          },
-          preferences: {
-            ...mockUsers[userIndex].preferences,
-            notifications: {
-              ...mockUsers[userIndex].preferences.notifications,
-              email: sendEmail
-            }
-          },
-          role,
-          updatedAt: new Date().toISOString().split('T')[0]
-        };
-        
-        // Save to localStorage for persistence
-        localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-        
-        // Force re-render by updating data version
-        setDataVersion(prev => prev + 1);
-        
-        console.log('User updated successfully:', mockUsers[userIndex]);
-        
-        // Force page reload to see changes
-        setTimeout(() => {
-          window.location.href = `/users/profile/${id}`;
-        }, 100);
-      } else {
-        console.error('User not found for update');
-        alert('Error: User not found');
-      }
-    } else {
-      // Create new user
-      const newUser = {
-        id: `user-${Date.now()}`,
-        profile: {
-          firstName,
-          lastName,
-          avatar: profilePicture || 'https://randomuser.me/api/portraits/lego/1.jpg',
-          bio: internalNotes,
-          location: '',
-          joined: new Date().toISOString().split('T')[0]
-        },
-        contact: {
-          email,
-          phone,
-          whatsapp: phone
-        },
-        verification: {
-          email: verified,
-          phone: verified,
-          identity: false,
-          address: false
-        },
-        preferences: {
-          language: 'English',
-          currency: 'NGN',
-          timezone: 'WAT',
-          notifications: {
-            email: sendEmail,
-            sms: false,
-            push: true
-          }
-        },
-        status: 'active',
-        role,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        stats: {
-          totalBookings: 0,
-          totalSpent: 0,
-          averageRating: 0,
-          reviewsGiven: 0,
-          responseRate: 0
-        }
-      };
-
-      // Add to mockUsers array
-      mockUsers.push(newUser);
-      
-      // Save to localStorage for persistence
-      localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-      
-      // Force re-render by updating data version
-      setDataVersion(prev => prev + 1);
-      
-      console.log('New user created:', newUser);
-      
-      // Force page reload to see changes
-      setTimeout(() => {
-        window.location.href = '/users';
-      }, 100);
-    }
-  };
+  if (fetchLoading) {
+    return (
+      <PageLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -205,6 +98,7 @@ export default function AddNewUser() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {error && <span className="text-xs text-destructive font-bold">{error}</span>}
           <Link to={isEditMode ? `/users/profile/${id}` : "/users"} className="hidden md:flex bg-muted text-foreground px-6 py-2.5 rounded-xl font-black items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
             Cancel
           </Link>
@@ -212,7 +106,7 @@ export default function AddNewUser() {
       </header>
 
       {/* Form Body */}
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
+      <form onSubmit={onFormSubmit} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
         <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Column: Form Fields */}
@@ -221,37 +115,40 @@ export default function AddNewUser() {
             {/* Account Information Card */}
             <FormSection title="Personal Information" icon="lucide:user">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <InputField 
-                    label="First Name"
-                    placeholder="e.g. John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <InputField 
-                    label="Last Name"
-                    placeholder="e.g. Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
+                <InputField 
+                  label="First Name"
+                  name="firstName"
+                  placeholder="e.g. John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField 
+                  label="Last Name"
+                  name="lastName"
+                  placeholder="e.g. Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                />
               </div>
               <InputField 
                 label="Email Address"
+                name="email"
                 type="email"
                 placeholder="john.doe@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 icon="lucide:mail"
+                required
               />
               <InputField 
                 label="Phone Number"
+                name="phone"
                 type="tel"
                 placeholder="+1 (555) 000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={formData.phone}
+                onChange={handleChange}
                 icon="lucide:phone"
               />
             </FormSection>
@@ -259,114 +156,38 @@ export default function AddNewUser() {
             {/* Role & Permissions Card */}
             <FormSection title="Role & Access" icon="lucide:shield-check">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <label className="relative cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="guest" 
-                    className="peer sr-only" 
-                    checked={role === 'guest'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('guest');
-                    }}
-                  />
-                  <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
-                    <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                      <Icon icon="lucide:user" className="text-xl text-muted-foreground peer-checked:text-primary" />
+                {['guest', 'host', 'admin'].map((roleOption) => (
+                  <label key={roleOption} className="relative cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="role" 
+                      value={roleOption} 
+                      className="peer sr-only" 
+                      checked={formData.role === roleOption}
+                      onChange={() => handleSelectChange('role', roleOption)}
+                    />
+                    <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
+                      <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <Icon 
+                          icon={roleOption === 'guest' ? 'lucide:user' : roleOption === 'host' ? 'lucide:home' : 'lucide:shield'} 
+                          className={`text-xl ${formData.role === roleOption ? 'text-primary' : 'text-muted-foreground'}`} 
+                        />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest">{roleOption}</span>
                     </div>
-                    <span className="text-xs font-black uppercase tracking-widest">Guest</span>
-                  </div>
-                </label>
-                <label className="relative cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="host" 
-                    className="peer sr-only"
-                    checked={role === 'host'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('host');
-                    }}
-                  />
-                  <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
-                    <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                      <Icon icon="lucide:home" className="text-xl text-muted-foreground peer-checked:text-primary" />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest">Host</span>
-                  </div>
-                </label>
-                <label className="relative cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="admin" 
-                    className="peer sr-only"
-                    checked={role === 'admin'}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setRole('admin');
-                    }}
-                  />
-                  <div className="p-4 bg-muted border-2 border-transparent rounded-2xl flex flex-col items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/80">
-                    <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                      <Icon icon="lucide:shield" className="text-xl text-muted-foreground peer-checked:text-primary" />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest">Admin</span>
-                  </div>
-                </label>
+                  </label>
+                ))}
               </div>
             </FormSection>
 
-            {/* Notifications Card */}
-            <FormSection title="Notifications" icon="lucide:bell">
-              <div className="space-y-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center">
-                      <Icon icon="lucide:check-circle" className="text-tertiary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold">Verified Status</p>
-                      <p className="text-[10px] text-muted-foreground">Mark account as verified immediately</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setVerified(!verified)}
-                    className={`w-12 h-6 bg-tertiary rounded-full relative p-1 transition-all ${
-                      verified ? 'bg-tertiary' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all right-1"></span>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon icon="lucide:mail" className="text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold">Send Welcome Email</p>
-                      <p className="text-[10px] text-muted-foreground">Notify user of their new account</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setSendEmail(!sendEmail)}
-                    className={`w-12 h-6 bg-primary rounded-full relative p-1 transition-all ${
-                      sendEmail ? 'bg-primary' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all right-1"></span>
-                  </button>
-                </div>
-              </div>
-
+            {/* Bio Card */}
+            <FormSection title="Biography" icon="lucide:file-text">
               <TextAreaField 
-                label="Internal Notes"
-                placeholder="Reason for manual creation..."
-                value={internalNotes}
-                onChange={(e) => setInternalNotes(e.target.value)}
+                label="Internal Notes / Bio"
+                name="bio"
+                placeholder="User biography or internal notes..."
+                value={formData.bio}
+                onChange={handleChange}
                 rows="4"
               />
             </FormSection>
@@ -378,9 +199,9 @@ export default function AddNewUser() {
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 text-center space-y-4">
               <div className="relative inline-block group">
                 <div className="w-32 h-32 rounded-full border-4 border-muted bg-muted flex items-center justify-center overflow-hidden relative">
-                  {isEditMode && profilePicture ? (
+                  {formData.avatar ? (
                     <img 
-                      src={profilePicture} 
+                      src={formData.avatar} 
                       alt="Profile" 
                       className="w-full h-full object-cover"
                     />
@@ -395,8 +216,7 @@ export default function AddNewUser() {
                   type="file"
                   accept="image/jpeg,image/jpg,image/png"
                   onChange={handleFileUpload}
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border-4 border-card hover:scale-110 transition-transform cursor-pointer opacity-0"
-                  style={{ padding: 0 }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <button 
                   type="button"
@@ -405,11 +225,6 @@ export default function AddNewUser() {
                   <Icon icon="lucide:plus" className="text-lg font-bold" />
                 </button>
               </div>
-              {uploadError && (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs px-3 py-2 rounded-lg">
-                  {uploadError}
-                </div>
-              )}
               <div>
                 <h3 className="font-heading font-bold">Profile Picture</h3>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-1">PNG, JPG up to 5MB</p>
@@ -423,7 +238,9 @@ export default function AddNewUser() {
                 <h3 className="text-xs font-black uppercase tracking-widest">Admin Note</h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Creating a user manually will generate a temporary password. The user will be prompted to change it upon their first login.
+                {isEditMode 
+                  ? 'Updating user details will take effect immediately. Ensure all information is accurate.' 
+                  : 'Creating a user manually will generate a temporary password. The user will be prompted to change it upon their first login.'}
               </p>
             </div>
           </div>
@@ -435,8 +252,12 @@ export default function AddNewUser() {
             <Link to={isEditMode ? `/users/profile/${id}` : "/users"} className="bg-muted text-foreground px-6 py-2.5 rounded-xl font-black items-center justify-center gap-2 hover:bg-muted/80 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary">
               Cancel
             </Link>
-            <button type="submit" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <Icon icon="lucide:check" className="text-lg" />
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 text-[10px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {loading ? <Icon icon="lucide:loader-2" className="animate-spin" /> : <Icon icon="lucide:check" className="text-lg" />}
               <span>{isEditMode ? 'Update User' : 'Create User'}</span>
             </button>
           </div>
@@ -445,3 +266,4 @@ export default function AddNewUser() {
     </PageLayout>
   );
 }
+

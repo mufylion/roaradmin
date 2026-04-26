@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react';
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import { useFormatCurrency } from '../config/useAppConfig';
-import { mockListings } from '../data/mockListings';
+import { useProperties } from '../hooks/useProperties';
 
 
 const ListingCard = ({ 
@@ -19,6 +19,7 @@ const ListingCard = ({
   reviewValue,
   isDraft = false,
   id,
+  onDelete,
   onClick,
   formatCurrency
 }) => (
@@ -28,7 +29,7 @@ const ListingCard = ({
   >
     <div className={`relative h-56 overflow-hidden ${isDraft ? 'grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100' : ''}`}>
       <img 
-        src={image} 
+        src={image || 'https://via.placeholder.com/400x300?text=No+Image'} 
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
         alt={title} 
       />
@@ -62,7 +63,13 @@ const ListingCard = ({
         <Link to={`/listings/edit/${id}`} className="flex-1 py-3 bg-primary text-primary-foreground text-xs font-black rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest text-center">
           {isDraft ? 'Finish Setup' : 'Edit Details'}
         </Link>
-        <button className="px-4 py-3 bg-muted text-foreground text-xs font-black rounded-xl hover:bg-muted/80 transition-all active:scale-95 uppercase tracking-widest">
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+          }}
+          className="px-4 py-3 bg-muted text-foreground text-xs font-black rounded-xl hover:bg-muted/80 transition-all active:scale-95 uppercase tracking-widest"
+        >
           <Icon icon="lucide:trash-2" className="text-lg" />
         </button>
       </div>
@@ -72,26 +79,28 @@ const ListingCard = ({
 
 export default function Listings() {
   const formatCurrency = useFormatCurrency();
+  const { properties, loading, error, deleteProperty } = useProperties();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedListing, setSelectedListing] = useState(null);
-  const [locationFilter, setLocationFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   // Filter listings based on search query
-  const filteredListings = mockListings.filter(listing =>
-    listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    listing.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    listing.type.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredListings = properties.filter(listing =>
+    (listing.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (listing.address || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (listing.type || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
 
   const handleListingClick = (listingData) => {
-    // Find the full listing data to get the complete price object
-    const fullListing = mockListings.find(listing => listing.id === listingData.id);
+    const fullListing = properties.find(listing => listing.id === listingData.id);
     setSelectedListing(fullListing || listingData);
   };
 
-  
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this listing?')) {
+      await deleteProperty(id);
+    }
+  };
   
   return (
     <PageLayout>
@@ -128,9 +137,6 @@ export default function Listings() {
             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar">
               <select className="bg-muted border border-transparent rounded-xl text-xs px-4 py-2 font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer min-w-[120px]">
                 <option>All Locations</option>
-                <option>New York</option>
-                <option>California</option>
-                <option>Colorado</option>
               </select>
               <select className="bg-muted border border-transparent rounded-xl text-xs px-4 py-2 font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer min-w-[120px]">
                 <option>Status: All</option>
@@ -144,32 +150,46 @@ export default function Listings() {
             </div>
           </div>
 
+          {error && (
+            <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-bold">
+              {error}
+            </div>
+          )}
+
           {/* Listings Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredListings.map((listing) => (
-              <ListingCard 
-                key={listing.id}
-                image={listing.images[0]}
-                title={listing.title}
-                price={`${formatCurrency(listing.price.nightly)}/night`}
-                location={`${listing.location.city}, ${listing.location.state}`}
-                status={listing.availability.status === 'active' ? 'Active' : 'Draft'}
-                statLabel="Occupancy"
-                statValue={`${listing.stats.occupancy}%`}
-                reviewLabel="Reviews"
-                reviewValue={`${listing.ratings.overall} (${listing.reviews.length})`}
-                id={listing.id}
-                isDraft={listing.availability.status === 'draft'}
-                onClick={handleListingClick}
-                formatCurrency={formatCurrency}
-              />
-            ))}
-          </div>
-
-         
-
-                  </div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Icon icon="lucide:loader-2" className="text-4xl text-primary animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              {filteredListings.map((listing) => {
+                const images = typeof listing.images === 'string' ? JSON.parse(listing.images) : (listing.images || []);
+                return (
+                  <ListingCard 
+                    key={listing.id}
+                    image={images[0]}
+                    title={listing.name}
+                    price={`${formatCurrency(listing.pricePerNight)}/night`}
+                    location={listing.address}
+                    status={listing.status === 'available' ? 'Active' : 'Maintenance'}
+                    statLabel="Guests"
+                    statValue={listing.maxGuests}
+                    reviewLabel="Rooms"
+                    reviewValue={`${listing.bedrooms} BR / ${listing.bathrooms} BA`}
+                    id={listing.id}
+                    isDraft={listing.status === 'maintenance'}
+                    onDelete={handleDelete}
+                    onClick={handleListingClick}
+                    formatCurrency={formatCurrency}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
       </>
     </PageLayout>
   );
 }
+
